@@ -5,6 +5,7 @@ import '../data/player_store.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
 
 /// Profile, stats, Eve's wardrobe and settings on one scrolling page.
@@ -71,7 +72,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final showing = _preview ?? store.outfit;
 
     return Scaffold(
-      body: SafeArea(
+      body: PageBody(maxWidth: 860,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           children: [
@@ -142,7 +143,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 12),
             GridView.count(
-              crossAxisCount: 2,
+              crossAxisCount: isWide(context) ? 3 : 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 10,

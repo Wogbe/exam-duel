@@ -5,6 +5,7 @@ import '../data/player_store.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
 import '../widgets/week_strip.dart';
 import 'home_screen.dart';
@@ -41,7 +42,8 @@ class _StreakScreenState extends ConsumerState<StreakScreen> {
     return Scaffold(
       body: Stack(children: [
         if (motion && widget.event != StreakEvent.reset) const Positioned.fill(child: ConfettiBurst()),
-        SafeArea(
+        PageBody(
+          maxWidth: 600,
           child: FillScroll(
             padding: const EdgeInsets.all(24),
             child: Column(children: [

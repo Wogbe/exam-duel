@@ -93,6 +93,23 @@ The output is `build/app/outputs/flutter-apk/app-release.apk`.
 - **Fonts:** Google Fonts download at first launch and are cached afterwards.
 - **Room cleanup:** `select public.cleanup_rooms();` removes rooms older than a day. Schedule it with pg_cron (see the comment in the migration).
 
+## 5. Web app (same code, GitHub Pages)
+
+The web version is the same Flutter app with its own desktop layout, and phone and browser players can join the same rooms. On screens 900 px or wider:
+
+- **Home** becomes a full page: a top bar with navigation, streak and coins; a big "Play with friends" card where Eve follows the mouse; a bento grid with Join, Quick Fire, Fact of the day, level and "How it works".
+- **Lobby** shows the room code and controls on the left, and players on the right.
+- **Live game** puts the question and a 2×2 answer grid on the left, with a live scoreboard and emotes on the right. Players can answer with the keys 1–4 or A–D.
+- **Forms** (onboarding, join, host setup, profile, Quick Fire) are centred columns, and the grids get more columns.
+- **Buttons and cards** lift on hover and show a pointer cursor.
+
+1. Add `.github/workflows/web.yml` to the repo (create it on GitHub if the upload skips hidden folders).
+2. Go to **Settings › Pages** and set **Source** to **GitHub Actions**.
+3. Open **Actions › Web app › Run workflow**. Every later push to `main` redeploys automatically.
+4. The site goes live at `https://<your-username>.github.io/<repo-name>/`.
+
+To build it locally, run `BASE_HREF=/ ./tool/build_web.sh` and upload `build/web/` to any static host (Netlify, Vercel, Firebase Hosting).
+
 ## How online play works
 
 ```
@@ -133,6 +150,9 @@ assets/data/                  questions.json (99), facts.json (38)
 assets/icon/                  app icon: master, adaptive layers, monochrome
 .github/workflows/            android-apk.yml (cloud APK build)
 tool/build_android.sh         one-command APK build
+tool/build_web.sh             one-command web build
+lib/widgets/responsive.dart   breakpoint, centred layouts, keyboard answers
+.github/workflows/web.yml     web build + GitHub Pages deploy
 supabase/
   migrations/…_init.sql       schema, RLS, game functions, realtime
   seed.sql                    generated question bank

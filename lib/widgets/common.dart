@@ -25,6 +25,7 @@ class Pressable extends StatefulWidget {
 
 class _PressableState extends State<Pressable> {
   bool _down = false;
+  bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +34,11 @@ class _PressableState extends State<Pressable> {
       button: true,
       enabled: enabled,
       label: widget.semanticLabel,
-      child: GestureDetector(
+      child: MouseRegion(
+        cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: enabled ? (_) => setState(() => _down = true) : null,
         onTapCancel: () => setState(() => _down = false),
@@ -44,11 +49,13 @@ class _PressableState extends State<Pressable> {
               }
             : null,
         child: AnimatedScale(
-          scale: _down ? widget.scale : 1,
-          duration: Duration(milliseconds: _down ? 80 : 520),
-          curve: _down ? Curves.easeOut : Curves.elasticOut,
+          // Mouse hover lifts slightly; touch press squashes.
+          scale: _down ? widget.scale : (_hover && enabled ? 1.02 : 1),
+          duration: Duration(milliseconds: _down ? 80 : (_hover ? 200 : 520)),
+          curve: _down ? Curves.easeOut : (_hover ? Curves.easeOutBack : Curves.elasticOut),
           child: Opacity(opacity: enabled ? 1 : 0.4, child: widget.child),
         ),
+      ),
       ),
     );
   }

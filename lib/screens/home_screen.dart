@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/player_store.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/eve/eve.dart';
+import '../widgets/responsive.dart';
 import '../widgets/week_strip.dart';
 import 'fact_screen.dart';
 import 'host_setup_screen.dart';
@@ -25,9 +27,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _track(PointerEvent e) {
     final size = MediaQuery.sizeOf(context);
+    if (isWide(context)) {
+      // Desktop: Eve looks towards the mouse anywhere on the page.
+      setState(() => _look = Offset(
+            ((e.localPosition.dx / size.width) * 2 - 1.2).clamp(-1.0, 1.0),
+            ((e.localPosition.dy / size.height) * 2 - 1.3).clamp(-1.0, 1.0),
+          ));
+      return;
+    }
     // Eve sits top-right; aim relative to her rough position.
     final eve = Offset(size.width - 70, 300);
-    final d = e.position - eve;
+    final d = e.localPosition - eve;
     setState(() => _look = Offset((d.dx / 160).clamp(-1.0, 1.0), (d.dy / 220).clamp(-1.0, 1.0)));
   }
 
@@ -41,11 +51,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final atRisk = store.streakAtRisk;
     final hour = DateTime.now().hour;
     final greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    if (isWide(context)) return _wide(c, store, motion, atRisk, greet);
 
     return Scaffold(
       body: Listener(
         onPointerDown: _track,
         onPointerMove: _track,
+        onPointerHover: _track, // mouse on web/desktop
         onPointerUp: (_) => setState(() => _look = Offset.zero),
         child: SafeArea(
           child: ListView(
@@ -207,19 +219,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
 
   Widget _tile(AppColors c,
-          {required Color bg, required String tag, required String title, required IconData icon, required VoidCallback onTap}) =>
+          {required Color bg,
+          required String tag,
+          required String title,
+          required IconData icon,
+          required VoidCallback onTap,
+          double? height = 158,
+          double titleSize = 22}) =>
       Pressable(
         onTap: onTap,
         semanticLabel: title.replaceAll('\n', ' '),
         child: Container(
-          height: 158,
+          height: height,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(28)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [Tag(tag), const Spacer(), Icon(icon, color: Pastel.ink, size: 28)]),
             const Spacer(),
             Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Expanded(child: Text(title, style: T.disp(22, color: Pastel.ink).copyWith(height: 1.05))),
+              Expanded(child: Text(title, style: T.disp(titleSize, color: Pastel.ink).copyWith(height: 1.05))),
               _goChip(),
             ]),
           ]),
@@ -241,4 +259,243 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Text('${(progress * 500).round()} / 500 XP to level ${level + 1}', style: T.body(13, color: c.muted)),
         ]),
       );
+
+  // -------------------------------------------------------------------------
+  // Web / desktop layout
+  // -------------------------------------------------------------------------
+
+  Widget _wide(AppColors c, PlayerStore store, bool motion, bool atRisk, String greet) {
+    final fact = ref.watch(localBankProvider).factFor(DateTime.now());
+    return Scaffold(
+      body: Listener(
+        onPointerHover: _track,
+        onPointerMove: _track,
+        child: Column(children: [
+          _topBar(c, store),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(32, 28, 32, 56),
+              child: ContentWidth(
+                maxWidth: 1200,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('$greet, ${store.nickname}', style: T.body(17, color: c.muted)),
+                        const SizedBox(height: 10),
+                        Text('Ready to outsmart your friends?', style: T.disp(56, color: c.ink)),
+                      ]),
+                    ),
+                    const SizedBox(width: 40),
+                    Expanded(flex: 2, child: WeekStrip(activeDays: store.activeDays)),
+                  ]),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    height: 400,
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      Expanded(flex: 2, child: _heroWide(c, store.outfit, motion, atRisk)),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                          Expanded(
+                            child: _tile(c,
+                                bg: Pastel.lime,
+                                tag: 'Got a code?',
+                                title: 'Join a room',
+                                icon: Icons.login_rounded,
+                                height: null,
+                                titleSize: 30,
+                                onTap: () => _open(const JoinScreen())),
+                          ),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: _tile(c,
+                                bg: Pastel.sky,
+                                tag: store.bestQuickFire > 0 ? 'Best ${store.bestQuickFire}' : 'Solo · 60 s',
+                                title: 'Quick Fire',
+                                icon: Icons.bolt_rounded,
+                                height: null,
+                                titleSize: 30,
+                                onTap: () => _open(const SoloScreen())),
+                          ),
+                        ]),
+                      ),
+                    ]),
+                  ),
+                  const SizedBox(height: 16),
+                  IntrinsicHeight(
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      Expanded(child: _factWide(c, store, fact.text)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _levelCard(c, store.level, store.levelProgress, store.gamesPlayed, store.wins)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _howItWorks(c)),
+                    ]),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _topBar(AppColors c, PlayerStore store) => Container(
+        height: 76,
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: c.line))),
+        child: ContentWidth(
+          maxWidth: 1200,
+          child: Row(children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset('assets/icon/icon-512.png', width: 38, height: 38, semanticLabel: 'Exam Duel'),
+            ),
+            const SizedBox(width: 10),
+            Text('exam duel', style: T.disp(24, color: c.ink)),
+            const SizedBox(width: 40),
+            // Text links only when there's room; the cards below do the same job.
+            if (MediaQuery.sizeOf(context).width >= 1180) ...[
+              _navLink(c, 'Play with friends', () => _open(const HostSetupScreen())),
+              _navLink(c, 'Join a room', () => _open(const JoinScreen())),
+              _navLink(c, 'Quick Fire', () => _open(const SoloScreen())),
+              _navLink(c, 'Fact of the day', () => _open(const FactScreen())),
+            ],
+            const Spacer(),
+            StatPill(
+              icon: Icons.local_fire_department_rounded,
+              iconColor: Pastel.coral,
+              value: '${store.streak}',
+              label: '${store.streak} day streak',
+            ),
+            const SizedBox(width: 8),
+            StatPill(icon: Icons.toll_rounded, iconColor: Pastel.kGold, value: '${store.coins}', label: '${store.coins} coins'),
+            const SizedBox(width: 12),
+            Pressable(
+              onTap: () => _open(const ProfileScreen()),
+              semanticLabel: 'Your profile and settings',
+              child: Avatar(initial: store.nickname.isEmpty ? '?' : store.nickname[0].toUpperCase(), index: store.avatar, size: 44),
+            ),
+          ]),
+        ),
+      );
+
+  Widget _navLink(AppColors c, String label, VoidCallback onTap) => Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: Pressable(
+          onTap: onTap,
+          semanticLabel: label,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Text(label, style: T.body(15, w: FontWeight.w600, color: c.ink)),
+          ),
+        ),
+      );
+
+  Widget _heroWide(AppColors c, String outfit, bool motion, bool atRisk) => Pressable(
+        onTap: () => _open(const HostSetupScreen()),
+        semanticLabel: 'Play with friends: host a room',
+        scale: 0.98,
+        child: Container(
+          padding: const EdgeInsets.all(36),
+          decoration: BoxDecoration(color: c.acc, borderRadius: BorderRadius.circular(36)),
+          child: Stack(children: [
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Tag('2–12 players · live'),
+              const SizedBox(height: 16),
+              Text('Play with\nfriends', style: T.disp(64, color: Pastel.ink)),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: 340,
+                child: Text(
+                  atRisk ? 'Streak at risk… one quick round?' : 'Host a room, share the code, and battle it out live. Phones and browsers play together.',
+                  style: T.body(17, w: FontWeight.w500, color: Pastel.ink, height: 1.35),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                height: 56,
+                padding: const EdgeInsets.only(left: 24, right: 6),
+                decoration: BoxDecoration(color: Pastel.ink, borderRadius: BorderRadius.circular(999)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('Host a room', style: T.disp(18, color: Colors.white)),
+                  const SizedBox(width: 14),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(color: c.acc, shape: BoxShape.circle),
+                    child: const Icon(Icons.arrow_forward_rounded, color: Pastel.ink),
+                  ),
+                ]),
+              ),
+            ]),
+            Positioned(
+              right: 0,
+              bottom: -12,
+              child: IgnorePointer(
+                child: Eve(
+                  size: 270,
+                  iris: c.iris,
+                  mood: atRisk ? EveMood.sleepy : EveMood.idle,
+                  lookX: _look.dx,
+                  lookY: _look.dy,
+                  outfit: outfit,
+                  motion: motion,
+                ),
+              ),
+            ),
+          ]),
+        ),
+      );
+
+  Widget _factWide(AppColors c, PlayerStore store, String fact) => Pressable(
+        onTap: () => _open(const FactScreen()),
+        semanticLabel: 'Fact of the day',
+        scale: 0.98,
+        child: Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(color: Pastel.lav, borderRadius: BorderRadius.circular(28)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [Tag(store.factSeenToday ? 'Read today' : 'New today'), const Spacer(), _goChip()]),
+            const SizedBox(height: 14),
+            Text('Fact of the day', style: T.disp(24, color: Pastel.ink)),
+            const SizedBox(height: 8),
+            Text(
+              store.factSeenToday ? fact : 'Tap to reveal today’s fact and keep your streak.',
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: T.body(15, w: FontWeight.w500, color: Pastel.ink, height: 1.35),
+            ),
+          ]),
+        ),
+      );
+
+  Widget _howItWorks(AppColors c) {
+    const steps = ['Host a room and pick categories', 'Share the 5-letter code', 'Answer fast. Fastest correct wins'];
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(28)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('HOW IT WORKS', style: T.micro(color: c.muted)),
+        const SizedBox(height: 14),
+        for (var i = 0; i < steps.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(children: [
+              Container(
+                width: 30,
+                height: 30,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: c.accSoft, shape: BoxShape.circle),
+                child: Text('${i + 1}', style: T.disp(14, color: c.ink)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(steps[i], style: T.body(15, w: FontWeight.w600, color: c.ink))),
+            ]),
+          ),
+      ]),
+    );
+  }
 }

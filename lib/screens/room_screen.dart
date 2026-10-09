@@ -10,6 +10,7 @@ import '../state/room_controller.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/eve/eve.dart';
+import '../widgets/responsive.dart';
 
 const _emotes = ['Chale!', 'Eii!', 'Sharp!', 'Herh!', 'Too easy', 'GG'];
 
@@ -302,99 +303,138 @@ class _LobbyViewState extends ConsumerState<_LobbyView> {
         ? (players.length < 2 ? 'Share the code. I’ll wait.' : 'Everyone in? Let’s go!')
         : 'Waiting for ${host?.nickname ?? 'the host'} to start…';
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-        child: Row(children: [
-          CircleIconButton(icon: Icons.close_rounded, label: 'Leave room', onTap: widget.onLeave),
-          const SizedBox(width: 12),
-          Expanded(child: Text('Lobby', style: T.disp(28, color: c.ink))),
-          StatPill(icon: Icons.group_rounded, value: '${players.length}/12', label: '${players.length} players'),
+    final header = Row(children: [
+      CircleIconButton(icon: Icons.close_rounded, label: 'Leave room', onTap: widget.onLeave),
+      const SizedBox(width: 12),
+      Expanded(child: Text('Lobby', style: T.disp(28, color: c.ink))),
+      StatPill(icon: Icons.group_rounded, value: '${players.length}/12', label: '${players.length} players'),
+    ]);
+
+    final codeCard = Container(
+      padding: const EdgeInsets.fromLTRB(22, 20, 14, 18),
+      decoration: BoxDecoration(color: c.acc, borderRadius: BorderRadius.circular(32)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('ROOM CODE', style: T.micro(color: Pastel.ink)),
+        const SizedBox(height: 6),
+        Row(children: [
+          Expanded(
+            child: FittedBox(
+              alignment: Alignment.centerLeft,
+              fit: BoxFit.scaleDown,
+              child: Text(room.code, style: T.disp(64, color: Pastel.ink).copyWith(letterSpacing: 6)),
+            ),
+          ),
+          CircleIconButton(
+            icon: Icons.copy_rounded,
+            label: 'Copy code',
+            fill: Colors.white,
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: room.code));
+              showToast(context, 'Code copied');
+            },
+          ),
+          const SizedBox(width: 8),
+          CircleIconButton(icon: Icons.share_rounded, label: 'Share on WhatsApp', fill: Colors.white, onTap: () => _shareWhatsApp(room.code)),
         ]),
-      ),
+        const SizedBox(height: 10),
+        Text(room.settings.summary, style: T.body(14, w: FontWeight.w600, color: Pastel.ink)),
+        if (room.settings.hasAiBatch) ...[
+          const SizedBox(height: 8),
+          const Tag('Eve wrote fresh questions'),
+        ],
+      ]),
+    );
+
+    final eveRow = Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      Eve(size: 96, iris: c.iris, mood: players.length > 1 ? EveMood.happy : EveMood.idle, outfit: store.outfit, motion: !store.reduceMotion, bob: true),
+      const SizedBox(width: 8),
+      Expanded(child: Padding(padding: const EdgeInsets.only(bottom: 26), child: Bubble(line))),
+    ]);
+
+    final playerList = Wrap(
+      spacing: 6,
+      runSpacing: 44,
+      children: [
+        for (final p in players)
+          PopIn(
+            key: ValueKey(p.userId),
+            enabled: !store.reduceMotion,
+            child: _PlayerChip(player: p, isMe: p.userId == ctrl.me, emote: ctrl.emotes[p.userId]?.emote),
+          ),
+      ],
+    );
+
+    final controls = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _EmoteBar(ctrl: ctrl),
+      const SizedBox(height: 12),
+      if (ctrl.isHost)
+        GoButton(
+          label: players.length < 2 ? 'Start (practice alone)' : 'Start game',
+          busy: _starting,
+          onTap: _start,
+        )
+      else
+        Container(
+          height: 58,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: c.surface2, borderRadius: BorderRadius.circular(999)),
+          child: Text('The host starts the game', style: T.disp(17, color: c.muted)),
+        ),
+    ]);
+
+    if (isWide(context)) {
+      // Web / desktop: code and controls on the left, players on the right.
+      return ContentWidth(
+        maxWidth: 1200,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(32, 20, 32, 24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            header,
+            const SizedBox(height: 20),
+            if (ctrl.error != null) _ErrorBanner(ctrl.error!),
+            Expanded(
+              child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                SizedBox(
+                  width: 440,
+                  child: ListView(children: [codeCard, const SizedBox(height: 22), eveRow, const SizedBox(height: 22), controls]),
+                ),
+                const SizedBox(width: 32),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(32)),
+                    child: ListView(children: [
+                      Text('PLAYERS · ${players.length}', style: T.micro(color: c.muted)),
+                      const SizedBox(height: 44),
+                      playerList,
+                    ]),
+                  ),
+                ),
+              ]),
+            ),
+          ]),
+        ),
+      );
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Padding(padding: const EdgeInsets.fromLTRB(20, 12, 20, 0), child: header),
       Expanded(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
           children: [
             if (ctrl.error != null) _ErrorBanner(ctrl.error!),
-            Container(
-              padding: const EdgeInsets.fromLTRB(22, 20, 14, 18),
-              decoration: BoxDecoration(color: c.acc, borderRadius: BorderRadius.circular(32)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('ROOM CODE', style: T.micro(color: Pastel.ink)),
-                const SizedBox(height: 6),
-                Row(children: [
-                  Expanded(
-                    child: FittedBox(
-                      alignment: Alignment.centerLeft,
-                      fit: BoxFit.scaleDown,
-                      child: Text(room.code, style: T.disp(64, color: Pastel.ink).copyWith(letterSpacing: 6)),
-                    ),
-                  ),
-                  CircleIconButton(
-                    icon: Icons.copy_rounded,
-                    label: 'Copy code',
-                    fill: Colors.white,
-                    onTap: () {
-                      Clipboard.setData(ClipboardData(text: room.code));
-                      showToast(context, 'Code copied');
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  CircleIconButton(icon: Icons.share_rounded, label: 'Share on WhatsApp', fill: Colors.white, onTap: () => _shareWhatsApp(room.code)),
-                ]),
-                const SizedBox(height: 10),
-                Text(room.settings.summary, style: T.body(14, w: FontWeight.w600, color: Pastel.ink)),
-                if (room.settings.hasAiBatch) ...[
-                  const SizedBox(height: 8),
-                  const Tag('Eve wrote fresh questions'),
-                ],
-              ]),
-            ),
+            codeCard,
             const SizedBox(height: 18),
-            Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Eve(size: 96, iris: c.iris, mood: players.length > 1 ? EveMood.happy : EveMood.idle, outfit: store.outfit, motion: !store.reduceMotion, bob: true),
-              const SizedBox(width: 8),
-              Expanded(child: Padding(padding: const EdgeInsets.only(bottom: 26), child: Bubble(line))),
-            ]),
+            eveRow,
             const SizedBox(height: 20),
             Text('PLAYERS', style: T.micro(color: c.muted)),
             const SizedBox(height: 40),
-            Wrap(
-              spacing: 6,
-              runSpacing: 44,
-              children: [
-                for (final p in players)
-                  PopIn(
-                    key: ValueKey(p.userId),
-                    enabled: !store.reduceMotion,
-                    child: _PlayerChip(player: p, isMe: p.userId == ctrl.me, emote: ctrl.emotes[p.userId]?.emote),
-                  ),
-              ],
-            ),
+            playerList,
           ],
         ),
       ),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          _EmoteBar(ctrl: ctrl),
-          const SizedBox(height: 12),
-          if (ctrl.isHost)
-            GoButton(
-              label: players.length < 2 ? 'Start (practice alone)' : 'Start game',
-              busy: _starting,
-              onTap: _start,
-            )
-          else
-            Container(
-              height: 58,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: c.surface2, borderRadius: BorderRadius.circular(999)),
-              child: Text('The host starts the game', style: T.disp(17, color: c.muted)),
-            ),
-        ]),
-      ),
+      Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 16), child: controls),
     ]);
   }
 }
@@ -436,16 +476,133 @@ class _GameView extends ConsumerWidget {
       line = 'Hmm. Let’s learn it.';
     }
 
+    final canAnswer = q != null && !answered && room.status == RoomStatus.question;
+    if (isWide(context)) {
+      return AnswerKeys(
+        onPick: canAnswer ? ctrl.answer : null,
+        child: _wide(context, c, store.outfit, motion, room, q, reveal, me, result, answered, mood, line),
+      );
+    }
+
     // Scrolls only if the screen is too short; otherwise fills it exactly.
-    return LayoutBuilder(
-      builder: (context, box) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: box.maxHeight - 26),
-          child: IntrinsicHeight(
-            child: _content(context, c, store.outfit, motion, room, q, reveal, me, result, answered, mood, line),
+    return AnswerKeys(
+      onPick: canAnswer ? ctrl.answer : null,
+      child: LayoutBuilder(
+        builder: (context, box) => SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: box.maxHeight - 26),
+            child: IntrinsicHeight(
+              child: _content(context, c, store.outfit, motion, room, q, reveal, me, result, answered, mood, line),
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  _AnswerButton _answer(Question q, int i, Room room, bool reveal, bool answered, bool motion) => _AnswerButton(
+        letter: String.fromCharCode(65 + i),
+        text: q.options[i],
+        state: _stateFor(i, q, reveal),
+        shakeKey: '${room.currentIndex}-$i',
+        motion: motion,
+        onTap: (!answered && !reveal) ? () => ctrl.answer(i) : null,
+      );
+
+  /// Web / desktop: question and 2×2 answers on the left, live scoreboard on the right.
+  Widget _wide(BuildContext context, AppColors c, String outfit, bool motion, Room room, Question? q, bool reveal,
+      Player? me, AnswerResult? result, bool answered, EveMood mood, String line) {
+    return ContentWidth(
+      maxWidth: 1280,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(32, 20, 32, 24),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                if (ctrl.error != null) _ErrorBanner(ctrl.error!),
+                Row(children: [
+                  CircleIconButton(icon: Icons.close_rounded, label: 'Leave game', onTap: onLeave),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('QUESTION ${room.currentIndex + 1} OF ${room.questionCount}', style: T.micro(color: c.muted)),
+                      const SizedBox(height: 8),
+                      ProgressBar(value: (room.currentIndex + (reveal ? 1 : 0)) / room.questionCount.clamp(1, 99), kente: true, height: 10),
+                    ]),
+                  ),
+                  const SizedBox(width: 16),
+                  reveal
+                      ? SizedBox(
+                          width: 84,
+                          child: Column(children: [
+                            Text('${me?.score ?? 0}', style: T.disp(26, color: c.ink)),
+                            Text('points', style: T.body(12, color: c.muted)),
+                          ]),
+                        )
+                      : TimerRing(fraction: ctrl.timeLeftFraction, seconds: ctrl.secondsLeft, size: 76),
+                ]),
+                const SizedBox(height: 28),
+                Stack(clipBehavior: Clip.none, children: [
+                  Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(minHeight: 210),
+                    padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+                    decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(32)),
+                    child: q == null
+                        ? const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()))
+                        : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Tag(Category.byId(q.category).name, color: Pastel.all[Category.byId(q.category).colorIndex]),
+                            const SizedBox(height: 16),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 120),
+                              child: Text(q.stem, style: T.disp(36, color: c.ink).copyWith(height: 1.12)),
+                            ),
+                          ]),
+                  ),
+                  Positioned(
+                    right: 8,
+                    top: -26,
+                    child: IgnorePointer(
+                      child: Eve(size: 120, iris: c.iris, mood: mood, outfit: outfit, motion: motion, sparkle: reveal && (result?.correct ?? false)),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 14),
+                Align(alignment: Alignment.centerLeft, child: Bubble(line)),
+                const SizedBox(height: 18),
+                if (q != null)
+                  for (var r = 0; r < q.options.length; r += 2) ...[
+                    IntrinsicHeight(
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                        Expanded(child: _answer(q, r, room, reveal, answered, motion)),
+                        const SizedBox(width: 12),
+                        Expanded(child: r + 1 < q.options.length ? _answer(q, r + 1, room, reveal, answered, motion) : const SizedBox()),
+                      ]),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                const SizedBox(height: 8),
+                if (reveal) ...[
+                  if (result != null && result.points > 0) Center(child: FloatUp(text: '+${result.points}', color: c.ink)),
+                  const SizedBox(height: 8),
+                  ProgressBar(value: 1 - ctrl.revealProgress, height: 4),
+                ] else
+                  Text('Tip: press 1–4 or A–D to answer', textAlign: TextAlign.center, style: T.body(13, color: c.muted)),
+              ]),
+            ),
+          ),
+          const SizedBox(width: 28),
+          SizedBox(
+            width: 340,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Expanded(child: _Scoreboard(ctrl: ctrl, reveal: reveal)),
+              const SizedBox(height: 12),
+              _EmoteBar(ctrl: ctrl),
+            ]),
+          ),
+        ]),
       ),
     );
   }
@@ -507,14 +664,7 @@ class _GameView extends ConsumerWidget {
         const SizedBox(height: 12),
         if (q != null)
           for (var i = 0; i < q.options.length; i++) ...[
-            _AnswerButton(
-              letter: String.fromCharCode(65 + i),
-              text: q.options[i],
-              state: _stateFor(i, q, reveal),
-              shakeKey: '${room.currentIndex}-$i',
-              motion: motion,
-              onTap: (!answered && !reveal) ? () => ctrl.answer(i) : null,
-            ),
+            _answer(q, i, room, reveal, answered, motion),
             const SizedBox(height: 10),
           ],
         const Spacer(),
@@ -659,6 +809,74 @@ class _AnsweredRow extends StatelessWidget {
   }
 }
 
+/// Web / desktop sidebar: every player, live.
+class _Scoreboard extends StatelessWidget {
+  const _Scoreboard({required this.ctrl, required this.reveal});
+  final RoomController ctrl;
+  final bool reveal;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final ranked = ctrl.ranked;
+    final idx = ctrl.room.currentIndex;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
+      decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(28)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          Text('SCOREBOARD', style: T.micro(color: c.muted)),
+          const Spacer(),
+          if (!reveal) Text('${ctrl.answeredCount}/${ctrl.players.length} answered', style: T.body(12, color: c.muted)),
+        ]),
+        const SizedBox(height: 10),
+        Expanded(
+          child: ListView.builder(
+            itemCount: ranked.length,
+            itemBuilder: (_, i) {
+              final p = ranked[i];
+              final isMe = p.userId == ctrl.me;
+              final done = p.answeredIndex >= idx;
+              final emote = ctrl.emotes[p.userId]?.emote;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(color: isMe ? c.accSoft : Colors.transparent, borderRadius: BorderRadius.circular(16)),
+                child: Row(children: [
+                  SizedBox(width: 22, child: Text('${i + 1}', style: T.disp(15, color: c.muted))),
+                  Avatar(initial: p.initial, index: p.avatar, size: 32),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(isMe ? 'You' : p.nickname, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.body(14, w: FontWeight.w600, color: c.ink)),
+                      if (emote != null) Text(emote, style: T.body(12, w: FontWeight.w700, color: c.muted)),
+                    ]),
+                  ),
+                  if (!reveal)
+                    Icon(done ? Icons.check_circle_rounded : Icons.more_horiz_rounded, size: 18, color: done ? c.ink : c.muted)
+                  else ...[
+                    if (p.streak >= 2) ...[
+                      const Icon(Icons.local_fire_department_rounded, size: 16, color: Pastel.coral),
+                      Text('${p.streak}', style: T.body(12, w: FontWeight.w700, color: c.ink)),
+                      const SizedBox(width: 6),
+                    ],
+                    if (p.lastPoints > 0) Text('+${p.lastPoints}', style: T.body(12, w: FontWeight.w700, color: c.muted)),
+                  ],
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 56,
+                    child: CountUp(value: p.score, style: T.disp(17, color: c.ink), duration: const Duration(milliseconds: 700)),
+                  ),
+                ]),
+              );
+            },
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
 /// After the reveal: top players with points just earned.
 class _MiniLeaderboard extends StatelessWidget {
   const _MiniLeaderboard({required this.ctrl});
@@ -751,7 +969,9 @@ class _ResultsViewState extends ConsumerState<_ResultsView> {
 
     return Stack(children: [
       if (motion && myRank >= 0 && myRank < 3) const Positioned.fill(child: ConfettiBurst()),
-      Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      ContentWidth(
+        maxWidth: isWide(context) ? 760 : double.infinity,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
@@ -825,6 +1045,7 @@ class _ResultsViewState extends ConsumerState<_ResultsView> {
           ]),
         ),
       ]),
+      ),
     ]);
   }
 }

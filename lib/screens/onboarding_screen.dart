@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
 import 'fact_screen.dart';
 
@@ -39,7 +40,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final store = ref.watch(playerStoreProvider);
     final motion = !store.reduceMotion;
     return Scaffold(
-      body: SafeArea(
+      body: PageBody(maxWidth: 600,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [

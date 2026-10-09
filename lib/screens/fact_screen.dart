@@ -8,6 +8,7 @@ import '../data/player_store.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
 import 'home_screen.dart';
 import 'streak_screen.dart';
@@ -90,7 +91,7 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
                 : EveMood.surprised;
 
     return Scaffold(
-      body: SafeArea(
+      body: PageBody(maxWidth: 680,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [

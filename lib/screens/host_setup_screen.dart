@@ -6,6 +6,7 @@ import '../state/providers.dart';
 import '../state/room_controller.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
 import 'room_screen.dart';
 
@@ -90,7 +91,7 @@ class _HostSetupScreenState extends ConsumerState<HostSetupScreen> {
     }
 
     return Scaffold(
-      body: SafeArea(
+      body: PageBody(maxWidth: 820,
         child: Column(children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
@@ -112,7 +113,7 @@ class _HostSetupScreenState extends ConsumerState<HostSetupScreen> {
                 ]),
                 const SizedBox(height: 10),
                 GridView.count(
-                  crossAxisCount: 2,
+                  crossAxisCount: isWide(context) ? 4 : 2,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   mainAxisSpacing: 10,

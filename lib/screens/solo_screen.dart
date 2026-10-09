@@ -7,6 +7,7 @@ import '../data/models.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
 
 enum _Phase { setup, play, done }
@@ -102,12 +103,15 @@ class _SoloScreenState extends ConsumerState<SoloScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
+      body: PageBody(maxWidth: 760,
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: switch (_phase) {
             _Phase.setup => KeyedSubtree(key: const ValueKey('s'), child: _setup(context)),
-            _Phase.play => KeyedSubtree(key: const ValueKey('p'), child: _play(context)),
+            _Phase.play => KeyedSubtree(
+                key: const ValueKey('p'),
+                child: AnswerKeys(onPick: _picked == null ? _answer : null, child: _play(context)),
+              ),
             _Phase.done => KeyedSubtree(key: const ValueKey('d'), child: _done(context)),
           },
         ),

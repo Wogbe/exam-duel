@@ -15,9 +15,10 @@ APP_NAME="Exam Duel"
 ORG="com.mctech"            # app id becomes com.mctech.exam_duel
 
 # 1. Create the android/ folder once. Existing lib/ and pubspec.yaml are kept.
-if [ ! -d android ]; then
-  echo "› Creating Android project files"
-  flutter create . --platforms=android,ios --project-name exam_duel --org "$ORG"
+# All three platforms are created together because the icon tool writes to each.
+if [ ! -d android ] || [ ! -d ios ] || [ ! -d web ]; then
+  echo "› Creating platform project files"
+  flutter create . --platforms=android,ios,web --project-name exam_duel --org "$ORG"
 fi
 # flutter create adds a counter-app test that doesn't match this app.
 if [ -f test/widget_test.dart ] && grep -q "MyApp" test/widget_test.dart; then

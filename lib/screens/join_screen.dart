@@ -6,6 +6,7 @@ import '../state/providers.dart';
 import '../state/room_controller.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
 import 'room_screen.dart';
 
@@ -53,7 +54,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
     final store = ref.watch(playerStoreProvider);
     final ready = _code.text.trim().length == 5;
     return Scaffold(
-      body: SafeArea(
+      body: PageBody(maxWidth: 560,
         child: LayoutBuilder(
           builder: (context, box) => SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
