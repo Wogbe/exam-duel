@@ -1,0 +1,41 @@
+name: exam_duel
+description: Exam Duel — a party trivia game for friends, hosted by Eve the owl.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: '>=3.27.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^2.8.0
+  flutter_riverpod: ^2.6.1
+  google_fonts: ^6.2.1
+  shared_preferences: ^2.3.2
+  path_drawing: ^1.0.1
+  url_launcher: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/data/
+    - assets/icon/icon-512.png
+
+# App icon ("Face-off"). Generate with: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon-1024.png"
+  adaptive_icon_background: "assets/icon/icon-background-432.png"
+  adaptive_icon_foreground: "assets/icon/icon-foreground-432.png"
+  adaptive_icon_monochrome: "assets/icon/icon-monochrome-432.png"
+  remove_alpha_ios: true
+  min_sdk_android: 21

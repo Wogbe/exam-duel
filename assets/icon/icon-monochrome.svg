@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108"><g transform="translate(54 54) scale(0.72) translate(-50 -56)">
+<defs><clipPath id="edL"><circle cx="28" cy="58" r="19"/></clipPath><clipPath id="edR"><circle cx="72" cy="58" r="19"/></clipPath></defs>
+<path d="M9 31 Q28 27 46 41" fill="none" stroke="#000" stroke-width="6.5" stroke-linecap="round"/>
+<path d="M91 31 Q72 27 54 41" fill="none" stroke="#000" stroke-width="6.5" stroke-linecap="round"/>
+<circle cx="28" cy="58" r="20.25" fill="none" stroke="#000" stroke-width="2.5"/>
+<g clip-path="url(#edL)">
+<circle cx="35" cy="62" r="11" fill="none" stroke="#000" stroke-width="2"/>
+<circle cx="37" cy="62.5" r="5.6" fill="#000"/>
+<path d="M0 10 L60 10 L60 63 L48 59 Q30 49 6 42 Z" fill="#000"/>
+</g>
+<circle cx="72" cy="58" r="20.25" fill="none" stroke="#000" stroke-width="2.5"/>
+<g clip-path="url(#edR)">
+<circle cx="65" cy="62" r="11" fill="none" stroke="#000" stroke-width="2"/>
+<circle cx="63" cy="62.5" r="5.6" fill="#000"/>
+<path d="M100 10 L40 10 L40 63 L52 59 Q70 49 94 42 Z" fill="#000"/>
+</g>
+</g></svg>
