@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -11,9 +12,28 @@ import 'map_screen.dart';
 import 'proto_data.dart';
 import 'proto_kit.dart';
 
+/// Turns what the learner typed or pasted into a study set. The real build swaps
+/// this for the AI call; sample data stands in until then.
+typedef MapBuilder = Future<StudySet> Function(String input);
+
+/// Thrown by a [MapBuilder] when the AI call fails. [offline] picks the wording.
+class MapBuildError implements Exception {
+  const MapBuildError({this.offline = false});
+  final bool offline;
+}
+
+Future<StudySet> sampleBuilder(String input) async {
+  final t = input.toLowerCase();
+  return setById(t.contains('fren')
+      ? 'fr'
+      : (t.contains('driv') || t.contains('road') ? 'drive' : (t.contains('bio') || t.contains('cell') ? 'bio' : null)));
+}
+
 /// Step 1: tell Eve what you're learning. Then Eve "thinks" and builds the map.
 class SnapScreen extends StatefulWidget {
-  const SnapScreen({super.key, this.autoStart});
+  const SnapScreen({super.key, this.autoStart, this.builder = sampleBuilder});
+
+  final MapBuilder builder;
 
   /// Skip straight to the thinking sequence (used by the ?screen=thinking link).
   final StudySet? autoStart;
@@ -26,6 +46,10 @@ class _SnapScreenState extends State<SnapScreen> {
   final _text = TextEditingController();
   final _focus = FocusNode();
   late StudySet? _building = widget.autoStart;
+  String? _waiting; // input the builder is working on
+  String _lastInput = '';
+  MapBuildError? _error;
+  int _req = 0; // bumped on cancel so a late answer is ignored
 
   @override
   void initState() {
@@ -44,17 +68,64 @@ class _SnapScreenState extends State<SnapScreen> {
   void _start(StudySet set) {
     FocusScope.of(context).unfocus();
     tick(true);
-    setState(() => _building = set);
+    setState(() {
+      _building = set;
+      _error = null;
+    });
   }
 
+  Future<void> _submit(String input) async {
+    FocusScope.of(context).unfocus();
+    final req = ++_req;
+    // shortcut: cap pasted notes at 20k chars, raise it when the real AI call sets its own limit.
+    _lastInput = input.length > 20000 ? input.substring(0, 20000) : input;
+    setState(() {
+      _waiting = _lastInput;
+      _error = null;
+    });
+    try {
+      final set = await widget.builder(_lastInput).timeout(const Duration(seconds: 45));
+      if (!mounted || req != _req) return;
+      setState(() => _waiting = null);
+      _start(set);
+    } catch (e) {
+      if (!mounted || req != _req) return;
+      _text.text = _lastInput; // so "your text is still here" is true after a paste
+      setState(() {
+        _waiting = null;
+        _error = e is MapBuildError ? e : const MapBuildError();
+      });
+    }
+  }
+
+  void _cancelWait() => setState(() {
+        _req++;
+        _waiting = null;
+      });
+
   void _submitTyped() {
-    final t = _text.text.trim().toLowerCase();
-    if (t.isEmpty) return;
-    final id = t.contains('fren')
-        ? 'fr'
-        : (t.contains('driv') || t.contains('road') ? 'drive' : (t.contains('bio') || t.contains('cell') ? 'bio' : null));
-    if (id == null) showToast(context, 'Preview: showing a sample map');
-    _start(setById(id));
+    final t = _text.text.trim();
+    if (t.isNotEmpty) _submit(t);
+  }
+
+  void _stub() {
+    showToast(context, 'Preview: showing a sample map');
+    _start(setById('bio'));
+  }
+
+  Future<void> _paste() async {
+    String t;
+    try {
+      t = (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '';
+    } catch (_) {
+      t = ''; // clipboard blocked (e.g. web permission denied)
+    }
+    if (!mounted) return;
+    if (t.isEmpty) {
+      showToast(context, 'Nothing copied yet. Copy some notes first.');
+    } else {
+      _submit(t);
+    }
   }
 
   void _done() => Navigator.of(context).pushReplacement(softRoute(MapScreen(set: _building!, fresh: true)));
@@ -69,7 +140,7 @@ class _SnapScreenState extends State<SnapScreen> {
           duration: Duration(milliseconds: context.motion ? 450 : 0),
           switchInCurve: Curves.easeOutCubic,
           child: building == null
-              ? _input(context)
+              ? (_waiting == null ? _input(context) : _Waiting(key: const ValueKey('wait'), onCancel: _cancelWait))
               : _Thinking(key: ValueKey(building.id), set: building, onDone: _done, onCancel: () => setState(() => _building = null)),
         ),
       ),
@@ -96,21 +167,26 @@ class _SnapScreenState extends State<SnapScreen> {
         const SizedBox(height: 16),
         FadeRise(blur: true, child: Text('What are you\nlearning?', style: T.disp(40, color: c.ink))),
         const SizedBox(height: 18),
+        if (_error != null) ...[
+          _ErrorCard(error: _error!, onRetry: () => _submit(_lastInput)),
+          const SizedBox(height: 12),
+        ],
         FadeRise(delay: const Duration(milliseconds: 120), child: _typeBox(context)),
         const SizedBox(height: 12),
         FadeRise(
           delay: const Duration(milliseconds: 220),
           child: Row(children: [
-            for (final (icon, label, colour, from) in [
-              (Icons.photo_camera_rounded, 'Snap a photo', Pastel.lav, 'bio'),
-              (Icons.content_paste_rounded, 'Paste notes', Pastel.sky, 'bio'),
-              (Icons.description_rounded, 'Add a file', Pastel.peach, 'bio'),
+            // Photo and file stay sample stubs until the real build adds a camera/file picker.
+            for (final (icon, label, colour, VoidCallback onTap) in [
+              (Icons.photo_camera_rounded, 'Snap a photo', Pastel.lav, _stub),
+              (Icons.content_paste_rounded, 'Paste notes', Pastel.sky, _paste),
+              (Icons.description_rounded, 'Add a file', Pastel.peach, _stub),
             ])
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(right: label == 'Add a file' ? 0 : 10),
                   child: Pressable(
-                    onTap: () => _start(setById(from)),
+                    onTap: onTap,
                     semanticLabel: label,
                     child: Container(
                       height: 108,
@@ -213,6 +289,83 @@ class _SnapScreenState extends State<SnapScreen> {
           ),
         ),
       ]),
+    );
+  }
+}
+
+/// Shown while the builder is working. Cancel always works.
+class _Waiting extends StatelessWidget {
+  const _Waiting({super.key, required this.onCancel});
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
+      children: [
+        Center(child: Eve(mood: EveMood.thinking, size: 132, iris: c.iris, glow: true, motion: context.motion)),
+        const SizedBox(height: 16),
+        Semantics(
+          liveRegion: true,
+          child: Center(child: Text('Eve is reading…', style: T.disp(20, color: c.ink))),
+        ),
+        const SizedBox(height: 18),
+        Center(child: SizedBox(width: 160, child: LinearProgressIndicator(minHeight: 4, borderRadius: BorderRadius.circular(4), color: c.ink, backgroundColor: c.line))),
+        const SizedBox(height: 18),
+        Center(
+          child: TextButton(
+            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+            onPressed: onCancel,
+            child: Text('Cancel', style: T.body(15, w: FontWeight.w700, color: c.muted)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Offline or AI failure. The typed text stays in the box, samples keep working.
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({required this.error, required this.onRetry});
+  final MapBuildError error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final title = error.offline ? 'You\'re offline' : 'Eve got stuck';
+    final body = error.offline
+        ? 'Check your connection and try again. The samples below still work.'
+        : 'That didn\'t work. Your text is still here, so try again.';
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
+        decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(22), border: Border.all(color: Proto.wrong, width: 2)),
+        child: Row(children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(color: Proto.wrong, shape: BoxShape.circle),
+            child: Icon(error.offline ? Icons.wifi_off_rounded : Icons.error_outline_rounded, color: Pastel.ink),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: T.disp(16, color: c.ink)),
+              const SizedBox(height: 2),
+              Text(body, style: T.body(14, color: c.muted)),
+            ]),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+            onPressed: onRetry,
+            child: Text('Try again', style: T.body(14, w: FontWeight.w800, color: c.ink)),
+          ),
+        ]),
+      ),
     );
   }
 }

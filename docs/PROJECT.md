@@ -1,6 +1,6 @@
 # Exam Duel plan
 Updated: 2026-10-12
-Stage: Build   Current focus: turn the approved prototype into the real Snap screen
+Stage: Build   Current focus: Map screen + topic tiles
 
 Direction: AI-powered gamified learning for anyone, user-supplied content. UI first; no Supabase/auth/backend until the owner asks.
 Signature feature: Snap -> Map -> Duel.
@@ -9,8 +9,8 @@ Signature feature: Snap -> Map -> Duel.
 ### UI: Snap -> Map -> Duel real screens (Design -> Build)
 - [x] Owner reviews prototype and gives a verdict — keep as is (2026-10-12)
 - [ ] Pick app name (Study Duel / Hoot / Owlduel) — deferred by owner, decide later; working name Exam Duel
-- [ ] Commit current work (.claude/, docs/, prototype, global changes) — done when owner approves and tree is clean
-- [ ] Snap screen real: type/paste/snap input, offline-safe, with AI-wait error and offline states — done when it runs on sample data and failure states show; run ui-review
+- [x] Commit current work — committed dc67ee7 (docs/STATUS.md left out: shows a local path)
+- [x] Snap screen (typed + paste real, photo/file still sample stubs; wait/error/offline states, tested; ui-review and security-check run 2026-10-12): type/paste/snap input, offline-safe, with AI-wait error and offline states — done when it runs on sample data and failure states show; run ui-review
 - [ ] Map screen + topic tiles (New/Shaky/Solid/Ready) with "Show me where" and Report on every question — done when tiles update from sample answers; ui-review
 - [ ] Solo practice and Duel/Results screens wired to the map — done when a tile can be practised solo and sent as a duel on sample data; ui-review
 - [ ] Accessibility fixes: keyboard/focus on `Pressable`, TimerRing low-time contrast — done when keyboard-only flow works and contrast passes; ui-review

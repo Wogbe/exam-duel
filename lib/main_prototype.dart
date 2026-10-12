@@ -12,7 +12,7 @@ import 'theme/app_theme.dart';
 
 /// Design preview of the new direction (Snap → Map → Duel), with sample data.
 /// Run: flutter run -d chrome -t lib/main_prototype.dart
-/// Deep links on web: ?screen=board|snap|thinking|map|topic|duel|results&set=bio|fr|drive&dark=1&motion=0
+/// Deep links on web: ?screen=board|snap|thinking|map|topic|duel|results&set=bio|fr|drive&dark=1&motion=0&fail=offline|error
 /// (duel also takes &pick=0..3 to answer the first question automatically).
 void main() => runApp(const ProtoApp());
 
@@ -28,11 +28,19 @@ class _ProtoAppState extends State<ProtoApp> {
   late bool _dark = _q['dark'] == '1';
   late bool _motion = _q['motion'] != '0';
 
+  /// ?fail=offline|error makes the typed/pasted path fail after a moment, to preview the error states.
+  Future<StudySet> _builder(String input) async {
+    final fail = _q['fail'];
+    if (fail == null) return sampleBuilder(input);
+    await Future<void>.delayed(const Duration(seconds: 1));
+    throw MapBuildError(offline: fail == 'offline');
+  }
+
   Widget _start() {
     final set = setById(_q['set']);
     return switch (_q['screen']) {
-      'snap' => const SnapScreen(),
-      'thinking' => SnapScreen(autoStart: set),
+      'snap' => SnapScreen(builder: _builder),
+      'thinking' => SnapScreen(autoStart: set, builder: _builder),
       'map' => MapScreen(set: set),
       'topic' => TopicScreen(set: set),
       'duel' => DuelScreen(set: set, autoPick: int.tryParse(_q['pick'] ?? '')),
