@@ -1,6 +1,6 @@
 # Exam Duel plan
 Updated: 2026-10-12
-Stage: Build   Current focus: Accessibility fixes (Pressable keyboard/focus, TimerRing contrast)
+Stage: Build   Current focus: Neutral starter content + README rewrite
 
 Direction: AI-powered gamified learning for anyone, user-supplied content. UI first; no Supabase/auth/backend until the owner asks.
 Signature feature: Snap -> Map -> Duel.
@@ -13,13 +13,14 @@ Signature feature: Snap -> Map -> Duel.
 - [x] Snap screen (typed + paste real, photo/file still sample stubs; wait/error/offline states, tested; ui-review and security-check run 2026-10-12): type/paste/snap input, offline-safe, with AI-wait error and offline states — done when it runs on sample data and failure states show; run ui-review
 - [x] Map screen + topic tiles: tiles, readiness and Eve's suggestion update from duel/solo results via `progress` (in memory); "Show me where" and Report were already on the duel reveal. ui-review and security-check run; open items below
 - [x] Solo practice and Duel/Results wired to the map: tile -> solo/duel -> results -> map shows the new level (end-to-end test). Streak unified, caption and Eve prompt fixed. Questions are still the same 3 samples for every tile (the AI writes them per topic later)
-- [ ] Accessibility fixes: keyboard/focus on `Pressable`, TimerRing low-time contrast — done when keyboard-only flow works and contrast passes; ui-review
+- [x] Accessibility fixes: `Pressable` is keyboard-focusable (Tab, Enter/Space, visible ring); TimerRing low-time text 4.6:1 in light mode (tests); ui-review and security-check run. Not yet checked: a full keyboard-only walk through the app, 48 dp target size on all 35 Pressables
 - [ ] Neutral starter content (less West-Africa-leaning) and README rewrite to new direction — done when no regional bias remains; security-check after code tasks
 
 ### Open from the ui-reviews (Map, Topic, Duel)
 - Readiness number jumps without counting up; dot chart has no semantics
 - Leave-duel has no confirm; timer has no last-5-seconds cue; wrong-answer reason can sit below the fold on small phones
 - Fixed stat cards and font sizes may clip at large text scale; "Preview uses…" caption is dev copy
+- Timer warn colour is a raw hex, move to a theme token; timer label announces every tick; scale animation ignores reduce-motion
 - Contrast of `c.muted` and the lime source highlight in dark mode unchecked
 
 ## Blocked on the owner

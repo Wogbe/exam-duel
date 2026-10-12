@@ -26,6 +26,7 @@ class Pressable extends StatefulWidget {
 class _PressableState extends State<Pressable> {
   bool _down = false;
   bool _hover = false;
+  bool _focus = false;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +35,13 @@ class _PressableState extends State<Pressable> {
       button: true,
       enabled: enabled,
       label: widget.semanticLabel,
-      child: MouseRegion(
+      onTap: widget.onTap,
+      // Tab to focus, Enter or Space to activate (the default shortcuts map both to ActivateIntent).
+      child: FocusableActionDetector(
+        enabled: enabled,
+        onShowFocusHighlight: (v) => setState(() => _focus = v),
+        actions: {ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: (_) => widget.onTap?.call())},
+        child: MouseRegion(
         cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
         onEnter: (_) => setState(() => _hover = true),
         onExit: (_) => setState(() => _hover = false),
@@ -53,8 +60,27 @@ class _PressableState extends State<Pressable> {
           scale: _down ? widget.scale : (_hover && enabled ? 1.02 : 1),
           duration: Duration(milliseconds: _down ? 80 : (_hover ? 200 : 520)),
           curve: _down ? Curves.easeOut : (_hover ? Curves.easeOutBack : Curves.elasticOut),
-          child: Opacity(opacity: enabled ? 1 : 0.4, child: widget.child),
+          child: Opacity(
+            opacity: enabled ? 1 : 0.4,
+            // Ring sits just outside the child so it shows on filled buttons too.
+            child: Stack(clipBehavior: Clip.none, children: [
+              widget.child,
+              if (_focus)
+                Positioned(
+                  left: -4,
+                  top: -4,
+                  right: -4,
+                  bottom: -4,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: context.c.ink, width: 3)),
+                    ),
+                  ),
+                ),
+            ]),
+          ),
         ),
+      ),
       ),
       ),
     );
@@ -318,6 +344,8 @@ class TimerRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final warn = fraction < 0.3;
+    // Coral is only readable on the dark surface; light mode needs a darker orange (4.6:1 vs 2.0:1).
+    final warnColour = Theme.brightnessOf(context) == Brightness.dark ? Pastel.coral : const Color(0xFFC2410C);
     return Semantics(
       label: '$seconds seconds left',
       child: SizedBox(
@@ -326,13 +354,13 @@ class TimerRing extends StatelessWidget {
         child: Stack(alignment: Alignment.center, children: [
           CustomPaint(
             size: Size.square(size),
-            painter: _RingPainter(fraction, c.line, warn ? Pastel.coral : c.ink),
+            painter: _RingPainter(fraction, c.line, warn ? warnColour : c.ink),
           ),
           AnimatedScale(
             scale: warn ? 1.12 : 1,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutBack,
-            child: Text('$seconds', style: T.disp(size * 0.36, color: warn ? Pastel.coral : c.ink)),
+            child: Text('$seconds', style: T.disp(size * 0.36, color: warn ? warnColour : c.ink)),
           ),
         ]),
       ),
