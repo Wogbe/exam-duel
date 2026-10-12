@@ -9,6 +9,9 @@ class Pastel {
   static const peach = Color(0xFFFFC36B);
   static const pink = Color(0xFFF6B8E4);
   static const coral = Color(0xFFFF8F70);
+
+  /// Coral is too pale for text on light backgrounds (2:1); this reads at 4.6:1.
+  static const coralDeep = Color(0xFFC2410C);
   static const mint = Color(0xFF9FE6C4);
   static const aqua = Color(0xFF8EDFD3);
   static const okBg = Color(0xFF9FE6C4);

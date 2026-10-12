@@ -1,3 +1,6 @@
+import 'package:exam_duel/prototype/duel_screen.dart';
+import 'package:exam_duel/prototype/proto_data.dart';
+import 'package:exam_duel/prototype/proto_kit.dart';
 import 'package:exam_duel/theme/app_theme.dart';
 import 'package:exam_duel/widgets/common.dart';
 import 'package:flutter/material.dart';
@@ -45,4 +48,44 @@ void main() {
       expect(_contrast(colour, theme.scaffoldBackgroundColor), greaterThanOrEqualTo(4.5));
     });
   }
+
+  testWidgets('leaving a duel asks first once an answer has been given', (t) async {
+    await t.binding.setSurfaceSize(const Size(480, 1000));
+    final set = studySets.first;
+    await t.pumpWidget(MaterialApp(
+      theme: buildTheme(dark: false, accent: AccentChoice.aqua),
+      builder: (c, child) => ProtoScope(motionOn: false, dark: false, toggleMotion: () {}, toggleDark: () {}, child: child!),
+      home: Builder(builder: (context) => TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => DuelScreen(set: set, solo: true))), child: const Text('open'))),
+    ));
+    await t.tap(find.text('open'));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    final close = find.byIcon(Icons.close_rounded);
+
+    await t.tap(close); // nothing answered yet: leaves straight away
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    expect(find.byType(DuelScreen), findsNothing);
+
+    await t.tap(find.text('open'));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    final q = set.questions.first;
+    await t.tap(find.text(q.options[q.answer]));
+    await t.pump(const Duration(milliseconds: 500));
+    await t.tap(close);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 500));
+    expect(find.text('Leave this round?'), findsOneWidget);
+    await t.tap(find.text('Keep playing'));
+    await t.pump(const Duration(milliseconds: 500));
+    expect(find.byType(DuelScreen), findsOneWidget);
+    await t.tap(close);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 500));
+    await t.tap(find.text('Leave'));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    expect(find.byType(DuelScreen), findsNothing);
+  });
 }

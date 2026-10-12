@@ -16,12 +16,12 @@ Signature feature: Snap -> Map -> Duel.
 - [x] Accessibility fixes: `Pressable` is keyboard-focusable (Tab, Enter/Space, visible ring); TimerRing low-time text 4.6:1 in light mode (tests); ui-review and security-check run. Not yet checked: a full keyboard-only walk through the app, 48 dp target size on all 35 Pressables
 - [x] Neutral starter content and README rewrite: 21 Ghana/West-Africa-specific questions and 8 facts replaced with general-knowledge ones (still 99 questions, 38 facts; seed.sql regenerated); README now describes the learning-app direction, the preview and how to run it. Kept: Mansa Musa, Kilimanjaro, Nile, Sahara, Wakanda (world knowledge). Content only, so no security-check
 
-### Open from the ui-reviews (Map, Topic, Duel)
-- Readiness number jumps without counting up; dot chart has no semantics
-- Leave-duel has no confirm; timer has no last-5-seconds cue; wrong-answer reason can sit below the fold on small phones
-- Fixed stat cards and font sizes may clip at large text scale; "Preview uses…" caption is dev copy
-- Timer warn colour is a raw hex, move to a theme token; timer label announces every tick; scale animation ignores reduce-motion
-- Contrast of `c.muted` and the lime source highlight in dark mode unchecked
+### UI review leftovers (fixed 2026-10-12)
+- Leave-duel confirms once an answer is given; light haptic on the last 3 seconds; reveal card scrolls into view
+- Dot chart has a spoken summary; stat cards and topic hero grow with text size; "Preview uses…" copy reworded
+- Timer warn colour is `Pastel.coralDeep`; its scale animation respects reduce-motion
+- Lime "Show me where" box is solid lime (the 45% version was 3.9:1 in dark mode)
+- Not changed: readiness already counts up (it counts from 0 on a freshly opened map); timer label does not announce every tick (no live region)
 
 ## Blocked on the owner
 - Permission to commit (app name is deferred).

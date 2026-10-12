@@ -10,6 +10,9 @@ import 'proto_data.dart';
 import 'proto_kit.dart';
 
 /// A tapped tile grown into a full screen: mastery, source and the duel button.
+/// Fixed-height cards grow with the system text size so big text is not clipped.
+double _textFactor(BuildContext context) => MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6);
+
 class TopicScreen extends StatelessWidget {
   const TopicScreen({super.key, required this.set, int? index}) : index = index ?? -1;
   final StudySet set;
@@ -43,7 +46,7 @@ class TopicScreen extends StatelessWidget {
               child: Material(
                 type: MaterialType.transparency,
                 child: Container(
-                  height: 200,
+                  height: 200 * _textFactor(context),
                   padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
                     color: mastery.fill(c),
@@ -115,7 +118,7 @@ class TopicScreen extends StatelessWidget {
                 ),
                 if (!hasDuel) ...[
                   const SizedBox(height: 10),
-                  Text('Preview uses the ${set.focus.name} questions for every tile.', style: T.body(13, color: c.muted)),
+                  Text('Sample questions for now. Eve will write ones for this topic.', style: T.body(13, color: c.muted)),
                 ],
               ]),
             ),
@@ -133,7 +136,7 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        height: 120,
+        height: 120 * _textFactor(context),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(color: context.c.surface, borderRadius: BorderRadius.circular(22)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

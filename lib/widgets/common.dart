@@ -344,8 +344,8 @@ class TimerRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final warn = fraction < 0.3;
-    // Coral is only readable on the dark surface; light mode needs a darker orange (4.6:1 vs 2.0:1).
-    final warnColour = Theme.brightnessOf(context) == Brightness.dark ? Pastel.coral : const Color(0xFFC2410C);
+    final warnColour = Theme.brightnessOf(context) == Brightness.dark ? Pastel.coral : Pastel.coralDeep;
+    final still = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       label: '$seconds seconds left',
       child: SizedBox(
@@ -357,7 +357,7 @@ class TimerRing extends StatelessWidget {
             painter: _RingPainter(fraction, c.line, warn ? warnColour : c.ink),
           ),
           AnimatedScale(
-            scale: warn ? 1.12 : 1,
+            scale: warn && !still ? 1.12 : 1,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutBack,
             child: Text('$seconds', style: T.disp(size * 0.36, color: warn ? warnColour : c.ink)),

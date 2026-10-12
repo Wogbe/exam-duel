@@ -261,7 +261,11 @@ class _DotChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final best = result.mine.isEmpty ? -1 : result.mine.indexOf(result.mine.reduce(math.max));
-    return Container(
+    final summary = 'Points per question: ${[for (var i = 0; i < result.mine.length; i++) 'Q${i + 1} ${result.mine[i]}'].join(', ')}';
+    return Semantics(
+      label: summary,
+      excludeSemantics: true,
+      child: Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(24)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -289,6 +293,7 @@ class _DotChart extends StatelessWidget {
             Expanded(child: Text('Q${i + 1}', textAlign: TextAlign.center, style: mono(color: c.muted))),
         ]),
       ]),
+    ),
     );
   }
 }

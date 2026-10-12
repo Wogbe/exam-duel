@@ -31,6 +31,8 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
       if (s == AnimationStatus.completed) _pick(-1);
     });
 
+  final _revealKey = GlobalKey();
+  int _cueSecond = -1;
   int _qi = 0;
   int? _picked; // -1 = ran out of time
   bool _showSource = false;
@@ -47,6 +49,7 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
+    _timer.addListener(_cue);
     _timer.forward();
     final pick = widget.autoPick;
     if (pick != null) Future.delayed(const Duration(milliseconds: 600), () => mounted ? _pick(pick) : null);
@@ -56,6 +59,34 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
   void dispose() {
     _timer.dispose();
     super.dispose();
+  }
+
+  /// Leaving mid-game loses the round, so ask once answers have been given.
+  Future<void> _confirmLeave() async {
+    if (_correct.isEmpty) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Leave this round?'),
+        content: const Text('Your answers so far will not count.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep playing')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Leave')),
+        ],
+      ),
+    );
+    if (leave == true && mounted) Navigator.of(context).maybePop();
+  }
+
+  /// A light tap on each of the last three seconds, so the time pressure is felt as well as seen.
+  void _cue() {
+    final left = (_seconds * (1 - _timer.value)).ceil();
+    if (left == _cueSecond) return;
+    _cueSecond = left;
+    if (left >= 1 && left <= 3 && !_revealed) tick(true);
   }
 
   void _pick(int i) {
@@ -71,6 +102,13 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
       _mine.add(_lastGain);
       _friend.add(_q.friendPick == _q.answer ? 620 + 90 * _qi : 0);
       _secs.add(_seconds * _timer.value);
+    });
+    // On a small phone the reason sits below the answers; bring it into view.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _revealKey.currentContext;
+      if (ctx != null && ctx.mounted) {
+        Scrollable.ensureVisible(ctx, duration: Duration(milliseconds: context.motion ? 300 : 0), alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd);
+      }
     });
   }
 
@@ -120,7 +158,7 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
             children: [
               Row(children: [
-                CircleIconButton(icon: Icons.close_rounded, label: 'Leave duel', onTap: () => Navigator.of(context).maybePop()),
+                CircleIconButton(icon: Icons.close_rounded, label: 'Leave duel', onTap: _confirmLeave),
                 const SizedBox(width: 10),
                 ProtoPill(
                   '${widget.solo ? 'Solo' : 'Live'} · Q${_qi + 1}/${_qs.length}',
@@ -297,6 +335,7 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
     return FadeRise(
       key: ValueKey('reveal$_qi'),
       child: Container(
+        key: _revealKey,
         margin: const EdgeInsets.only(top: 6),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(26)),
@@ -353,7 +392,7 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
                     margin: const EdgeInsets.only(top: 10),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Pastel.lime.withValues(alpha: 0.45),
+                      color: Pastel.lime,
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
