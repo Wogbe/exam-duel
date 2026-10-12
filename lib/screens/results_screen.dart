@@ -2,36 +2,19 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/duel_result.dart';
+import '../data/sample_sets.dart';
+import '../data/study_set.dart';
+import '../state/progress.dart';
 import '../theme/app_theme.dart';
+import '../theme/mastery.dart';
 import '../widgets/common.dart';
 import '../widgets/eve/eve.dart';
 import '../widgets/responsive.dart';
+import '../widgets/study_widgets.dart';
+import '../widgets/view_settings.dart';
 import 'duel_screen.dart';
 import 'map_screen.dart';
-import 'proto_data.dart';
-import 'proto_kit.dart';
-
-class DuelResult {
-  const DuelResult({required this.correct, required this.mine, required this.friend, required this.seconds, this.solo = false});
-  final List<bool> correct;
-  final List<int> mine, friend;
-  final List<double> seconds;
-  final bool solo;
-
-  int get myTotal => mine.fold(0, (a, b) => a + b);
-  int get friendTotal => friend.fold(0, (a, b) => a + b);
-  int get rightCount => correct.where((r) => r).length;
-  bool get won => !solo && myTotal > friendTotal;
-  bool get lost => !solo && myTotal < friendTotal;
-
-  /// A good-looking result for the ?screen=results link.
-  factory DuelResult.sample(StudySet set) => DuelResult(
-        correct: const [true, true, false],
-        mine: const [880, 760, 0],
-        friend: [for (var i = 0; i < set.questions.length; i++) set.questions[i].friendPick == set.questions[i].answer ? 620 + 90 * i : 0],
-        seconds: const [4.8, 7.1, 20],
-      );
-}
 
 /// Step 4: the celebration and what changed on your map.
 class ResultsScreen extends StatefulWidget {
@@ -106,7 +89,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
               Row(children: [
                 CircleIconButton(icon: Icons.close_rounded, label: 'Close', onTap: () => Navigator.of(context).maybePop()),
                 const Spacer(),
-                if (!r.solo) const ProtoPill('$sampleStreak-day streak', icon: Icons.local_fire_department_rounded),
+                if (!r.solo) const CapsPill('$sampleStreak-day streak', icon: Icons.local_fire_department_rounded),
               ]),
               const SizedBox(height: 8),
               Center(
@@ -219,7 +202,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 delay: const Duration(milliseconds: 1200),
                 child: Transform.rotate(
                   angle: 0.18,
-                  child: ProtoPill('+${10 * r.rightCount + 10} XP', bg: Pastel.lime),
+                  child: CapsPill('+${10 * r.rightCount + 10} XP', bg: Pastel.lime),
                 ),
               ),
             ),
@@ -272,7 +255,7 @@ class _DotChart extends StatelessWidget {
         Row(children: [
           Text('POINTS PER QUESTION', style: mono(color: c.muted)),
           const Spacer(),
-          if (best >= 0 && result.mine[best] > 0) ProtoPill('Best · Q${best + 1}'),
+          if (best >= 0 && result.mine[best] > 0) CapsPill('Best · Q${best + 1}'),
         ]),
         const SizedBox(height: 12),
         TweenAnimationBuilder<double>(
@@ -323,7 +306,7 @@ class _DotChartPainter extends CustomPainter {
           Paint()..color = Pastel.lime.withValues(alpha: 0.7),
         );
       }
-      final colour = correct[q] ? ink : Proto.wrong;
+      final colour = correct[q] ? ink : Pastel.wrong;
       for (var x = 0; x < cols; x++) {
         final cx = q * colW + colW / 2 + (x - (cols - 1) / 2) * step;
         for (var y = 0; y < rows; y++) {

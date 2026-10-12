@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../screens/snap_screen.dart';
 import '../theme/app_theme.dart';
+import '../theme/mastery.dart';
 import '../widgets/common.dart';
 import '../widgets/eve/eve.dart';
+import '../widgets/mastery_tile.dart';
 import '../widgets/responsive.dart';
-import 'proto_kit.dart';
-import 'snap_screen.dart';
+import '../widgets/study_widgets.dart';
+import '../widgets/view_settings.dart';
 
 /// One-page visual direction: colours, type, Eve, components and motion rules.
 class StyleBoard extends StatelessWidget {
@@ -14,7 +17,7 @@ class StyleBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final scope = ProtoScope.of(context);
+    final scope = ViewSettings.of(context);
     var i = 0;
     Duration d() => Duration(milliseconds: 80 * i++);
 
@@ -43,7 +46,7 @@ class StyleBoard extends StatelessWidget {
               _Swatches(label: 'Base', colors: [(c.bg, 'Paper'), (c.surface, 'Card'), (c.ink, 'Ink')]),
               _Swatches(label: 'Pastels', colors: [for (final p in Pastel.all) (p, '')]),
               _Swatches(label: 'Mastery', colors: [for (final m in Mastery.values) (m.fill(c), m.label)]),
-              _Swatches(label: 'Hot accent · live and urgent only', colors: [(Proto.live, 'Live')]),
+              _Swatches(label: 'Hot accent · live and urgent only', colors: [(Pastel.live, 'Live')]),
             ]),
             _Section('2 · Type', delay: d(), children: [
               Text('Turn anything into a duel', style: T.disp(30, color: c.ink)),
@@ -86,9 +89,9 @@ class StyleBoard extends StatelessWidget {
             ]),
             _Section('4 · Pieces', delay: d(), children: [
               Wrap(spacing: 8, runSpacing: 8, children: const [
-                ProtoPill('4-day streak', icon: Icons.local_fire_department_rounded),
-                ProtoPill('Live · Q4/10', bg: Colors.white, liveDot: true),
-                ProtoPill('New best · Mitosis'),
+                CapsPill('4-day streak', icon: Icons.local_fire_department_rounded),
+                CapsPill('Live · Q4/10', bg: Colors.white, liveDot: true),
+                CapsPill('New best · Mitosis'),
               ]),
               const SizedBox(height: 14),
               GoButton(label: 'Start duel', onTap: () {}),

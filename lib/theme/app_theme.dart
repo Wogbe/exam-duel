@@ -18,6 +18,13 @@ class Pastel {
   static const badBg = Color(0xFFFF9E82);
   static const ink = Color(0xFF15202B);
 
+  /// The one "hot" accent, for live and urgent moments only.
+  static const live = Color(0xFFFF4B3E);
+  static const gold = Color(0xFFFFCF3A);
+  static const goldDeep = Color(0xFFE9A800);
+  static const right = Color(0xFF7FDDB0);
+  static const wrong = Color(0xFFFF9E82);
+
   /// Gold, for coins.
   static const coin = Color(0xFFF2B705);
 
@@ -175,3 +182,8 @@ ThemeData buildTheme({required bool dark, required AccentChoice accent}) {
     highlightColor: Colors.transparent,
   );
 }
+
+/// Monospace caps for small data labels ("Q4 · FROM YOUR NOTES").
+TextStyle mono({double size = 12, Color? color, FontWeight w = FontWeight.w600}) =>
+    GoogleFonts.dmMono(fontSize: size, fontWeight: w, letterSpacing: 0.8, color: color, height: 1.2);
+

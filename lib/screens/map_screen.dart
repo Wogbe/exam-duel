@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../data/sample_sets.dart';
+import '../data/study_set.dart';
+import '../state/progress.dart';
 import '../theme/app_theme.dart';
+import '../theme/mastery.dart';
 import '../widgets/common.dart';
 import '../widgets/eve/eve.dart';
+import '../widgets/mastery_tile.dart';
 import '../widgets/responsive.dart';
-import 'proto_data.dart';
-import 'proto_kit.dart';
+import '../widgets/study_widgets.dart';
+import '../widgets/view_settings.dart';
 import 'snap_screen.dart';
 import 'topic_screen.dart';
 
@@ -74,7 +79,7 @@ class MapScreen extends StatelessWidget {
                     Text(set.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.disp(26, color: c.ink)),
                   ]),
                 ),
-                const ProtoPill('$sampleStreak', icon: Icons.local_fire_department_rounded),
+                const CapsPill('$sampleStreak', icon: Icons.local_fire_department_rounded),
               ]),
               if (fresh && !progress.hasGains) ...[
                 const SizedBox(height: 12),

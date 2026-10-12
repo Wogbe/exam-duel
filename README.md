@@ -7,7 +7,7 @@ An AI-powered, gamified learning app for anyone learning anything, anywhere, hos
 The new direction, **Snap → Map → Duel**, is built as a UI preview that runs on sample data. There is no AI or backend behind it yet; that comes after the look and feel are settled. The plan and decisions live in `docs/PROJECT.md`.
 
 ```bash
-flutter run -d chrome -t lib/main_prototype.dart
+flutter run -d chrome -t lib/main_preview.dart
 ```
 
 - **Snap:** type or paste what you're learning (photo and file are sample stubs). It has waiting, offline and error states; add `?fail=offline` or `?fail=error` to the web URL to preview them.
@@ -145,24 +145,34 @@ host after 4.5 s  ─► next_question … ─► finished ─► rematch = star
 
 ```
 lib/
-  main_prototype.dart         entry point for the Snap → Map → Duel preview
-  prototype/                  preview screens, sample data, progress store
+  main_preview.dart           entry point for the Snap → Map → Duel preview (sample data)
+  preview/style_board.dart    one-page visual direction, the preview's home page
   main.dart, app.dart, config.dart
   theme/app_theme.dart        colours, accents, type styles (from the design system)
+  theme/mastery.dart          New / Shaky / Solid / Ready and their colours
   data/
     models.dart               Question, Room, Player, Category…
+    study_set.dart            StudySet, StudyTopic, StudyQuestion (the learning map's content)
+    sample_sets.dart          sample sets the preview runs on
+    map_builder.dart          MapBuilder seam where the AI call will plug in, plus the sample builder
+    duel_result.dart          how a duel or solo round went
     local_bank.dart           bundled questions + facts (offline)
     player_store.dart         profile, streak, XP, coins, outfits, settings
     game_repository.dart      Supabase RPCs, realtime streams, emotes, AI
   state/
     providers.dart            Riverpod providers
     room_controller.dart      live room state, timers, auto reveal/advance
+    progress.dart             topic mastery and readiness earned so far (in memory)
   widgets/
     eve/eve.dart              Eve, animated CustomPainter port of the design SVG
     common.dart               spring buttons, timer ring, confetti, colour-stripe bar…
     week_strip.dart
+    study_widgets.dart        pills, number display, nav, skeletons and motion helpers for the study screens
+    mastery_tile.dart         one topic tile on the map
+    view_settings.dart        motion and dark-mode switches, and `context.motion`
   screens/                    splash, onboarding, fact, streak, home, host setup,
-                              join, room (lobby/game/results), solo, profile
+                              join, room (lobby/game/results), solo, profile,
+                              snap, map, topic, duel, results (Snap → Map → Duel)
 assets/data/                  questions.json (99), facts.json (38)
 assets/icon/                  app icon: master, adaptive layers, monochrome
 .github/workflows/            android-apk.yml (cloud APK build)

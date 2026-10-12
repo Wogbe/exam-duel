@@ -1,6 +1,7 @@
-import 'package:exam_duel/prototype/proto_kit.dart';
-import 'package:exam_duel/prototype/snap_screen.dart';
+import 'package:exam_duel/data/map_builder.dart';
+import 'package:exam_duel/screens/snap_screen.dart';
 import 'package:exam_duel/theme/app_theme.dart';
+import 'package:exam_duel/widgets/view_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,7 +11,7 @@ Future<void> _pump(WidgetTester t, MapBuilder b) async {
   await t.binding.setSurfaceSize(const Size(480, 1000));
   await t.pumpWidget(MaterialApp(
     theme: buildTheme(dark: false, accent: AccentChoice.aqua),
-    builder: (c, child) => ProtoScope(motionOn: false, dark: false, toggleMotion: () {}, toggleDark: () {}, child: child!),
+    builder: (c, child) => ViewSettings(motionOn: false, dark: false, toggleMotion: () {}, toggleDark: () {}, child: child!),
     home: SnapScreen(builder: b),
   ));
   await t.pump(const Duration(seconds: 1));

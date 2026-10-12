@@ -2,12 +2,16 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/sample_sets.dart';
+import '../data/study_set.dart';
+import '../state/progress.dart';
 import '../theme/app_theme.dart';
+import '../theme/mastery.dart';
 import '../widgets/common.dart';
 import '../widgets/responsive.dart';
+import '../widgets/study_widgets.dart';
+import '../widgets/view_settings.dart';
 import 'duel_screen.dart';
-import 'proto_data.dart';
-import 'proto_kit.dart';
 
 /// A tapped tile grown into a full screen: mastery, source and the duel button.
 /// Fixed-height cards grow with the system text size so big text is not clipped.
@@ -57,7 +61,7 @@ class TopicScreen extends StatelessWidget {
                     Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(t.emoji, style: const TextStyle(fontSize: 44)),
                       const Spacer(),
-                      ProtoPill(mastery.label, bg: Colors.white.withValues(alpha: 0.75)),
+                      CapsPill(mastery.label, bg: Colors.white.withValues(alpha: 0.75)),
                     ]),
                     const Spacer(),
                     Text(t.name, style: T.disp(36, color: mastery.ink(c))),

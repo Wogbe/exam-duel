@@ -4,30 +4,16 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/map_builder.dart';
+import '../data/sample_sets.dart';
+import '../data/study_set.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/eve/eve.dart';
 import '../widgets/responsive.dart';
+import '../widgets/study_widgets.dart';
+import '../widgets/view_settings.dart';
 import 'map_screen.dart';
-import 'proto_data.dart';
-import 'proto_kit.dart';
-
-/// Turns what the learner typed or pasted into a study set. The real build swaps
-/// this for the AI call; sample data stands in until then.
-typedef MapBuilder = Future<StudySet> Function(String input);
-
-/// Thrown by a [MapBuilder] when the AI call fails. [offline] picks the wording.
-class MapBuildError implements Exception {
-  const MapBuildError({this.offline = false});
-  final bool offline;
-}
-
-Future<StudySet> sampleBuilder(String input) async {
-  final t = input.toLowerCase();
-  return setById(t.contains('fren')
-      ? 'fr'
-      : (t.contains('driv') || t.contains('road') ? 'drive' : (t.contains('bio') || t.contains('cell') ? 'bio' : null)));
-}
 
 /// Step 1: tell Eve what you're learning. Then Eve "thinks" and builds the map.
 class SnapScreen extends StatefulWidget {
@@ -156,7 +142,7 @@ class _SnapScreenState extends State<SnapScreen> {
         Row(children: [
           if (canPop) CircleIconButton(icon: Icons.arrow_back_rounded, label: 'Back', onTap: () => Navigator.of(context).pop()),
           const Spacer(),
-          const ProtoPill('Sample data', bg: Pastel.lime),
+          const CapsPill('Sample data', bg: Pastel.lime),
         ]),
         const SizedBox(height: 18),
         Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -343,12 +329,12 @@ class _ErrorCard extends StatelessWidget {
       container: true,
       child: Container(
         padding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
-        decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(22), border: Border.all(color: Proto.wrong, width: 2)),
+        decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(22), border: Border.all(color: Pastel.wrong, width: 2)),
         child: Row(children: [
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(color: Proto.wrong, shape: BoxShape.circle),
+            decoration: const BoxDecoration(color: Pastel.wrong, shape: BoxShape.circle),
             child: Icon(error.offline ? Icons.wifi_off_rounded : Icons.error_outline_rounded, color: Pastel.ink),
           ),
           const SizedBox(width: 12),
@@ -476,7 +462,7 @@ class _ThinkingState extends State<_Thinking> {
                           key: const ValueKey('done'),
                           width: 26,
                           height: 26,
-                          decoration: const BoxDecoration(color: Proto.right, shape: BoxShape.circle),
+                          decoration: const BoxDecoration(color: Pastel.right, shape: BoxShape.circle),
                           child: const Icon(Icons.check_rounded, size: 17, color: Pastel.ink),
                         )
                       : Container(

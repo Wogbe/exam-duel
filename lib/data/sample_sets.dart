@@ -1,59 +1,8 @@
-import 'package:flutter/foundation.dart';
+import '../theme/mastery.dart';
+import 'study_set.dart';
 
-import 'proto_kit.dart';
-
-/// Sample content for the design preview. In the real app Eve (AI) builds
-/// all of this from what the learner snaps, pastes or types.
-class ProtoTopic {
-  const ProtoTopic(this.name, this.emoji, this.mastery);
-  final String name, emoji;
-  final Mastery mastery;
-}
-
-class ProtoQuestion {
-  const ProtoQuestion({
-    required this.q,
-    required this.options,
-    required this.answer,
-    required this.why,
-    required this.quote,
-    required this.source,
-    required this.friendPick,
-  });
-  final String q;
-  final List<String> options;
-  final int answer;
-  final String why;
-
-  /// The sentence from the learner's own material that backs the answer.
-  final String quote;
-  final String source;
-
-  /// What the sample friend answers, to make the duel feel alive.
-  final int friendPick;
-}
-
-class StudySet {
-  const StudySet({
-    required this.id,
-    required this.title,
-    required this.from,
-    required this.topics,
-    required this.readiness,
-    required this.delta,
-    required this.duelTopic,
-    required this.questions,
-  });
-  final String id, title, from;
-  final List<ProtoTopic> topics;
-  final int readiness, delta;
-
-  /// Index of the shaky topic Eve suggests duelling on.
-  final int duelTopic;
-  final List<ProtoQuestion> questions;
-
-  ProtoTopic get focus => topics[duelTopic];
-}
+// Sample content for the preview. In the real app Eve (AI) builds all of this
+// from what the learner snaps, pastes or types.
 
 /// The sample streak, shown the same on every screen.
 const sampleStreak = 4;
@@ -70,21 +19,21 @@ const studySets = <StudySet>[
     delta: 5,
     duelTopic: 2,
     topics: [
-      ProtoTopic('Cell structure', '🔬', Mastery.ready),
-      ProtoTopic('Organelles', '🧩', Mastery.solid),
-      ProtoTopic('Mitosis', '🧬', Mastery.shaky),
-      ProtoTopic('Meiosis', '🔀', Mastery.unseen),
-      ProtoTopic('Membranes', '🫧', Mastery.solid),
-      ProtoTopic('Enzymes', '⚗️', Mastery.shaky),
-      ProtoTopic('Respiration', '🌬️', Mastery.solid),
-      ProtoTopic('Photosynthesis', '🌿', Mastery.ready),
-      ProtoTopic('DNA', '🧵', Mastery.solid),
-      ProtoTopic('Proteins', '🥚', Mastery.unseen),
-      ProtoTopic('Cell cycle', '🔄', Mastery.shaky),
-      ProtoTopic('Microscopy', '🔭', Mastery.unseen),
+      StudyTopic('Cell structure', '🔬', Mastery.ready),
+      StudyTopic('Organelles', '🧩', Mastery.solid),
+      StudyTopic('Mitosis', '🧬', Mastery.shaky),
+      StudyTopic('Meiosis', '🔀', Mastery.unseen),
+      StudyTopic('Membranes', '🫧', Mastery.solid),
+      StudyTopic('Enzymes', '⚗️', Mastery.shaky),
+      StudyTopic('Respiration', '🌬️', Mastery.solid),
+      StudyTopic('Photosynthesis', '🌿', Mastery.ready),
+      StudyTopic('DNA', '🧵', Mastery.solid),
+      StudyTopic('Proteins', '🥚', Mastery.unseen),
+      StudyTopic('Cell cycle', '🔄', Mastery.shaky),
+      StudyTopic('Microscopy', '🔭', Mastery.unseen),
     ],
     questions: [
-      ProtoQuestion(
+      StudyQuestion(
         q: 'In which phase of mitosis do chromosomes line up in the middle of the cell?',
         options: ['Prophase', 'Metaphase', 'Anaphase', 'Telophase'],
         answer: 1,
@@ -93,7 +42,7 @@ const studySets = <StudySet>[
         source: 'Your notes · page 2',
         friendPick: 1,
       ),
-      ProtoQuestion(
+      StudyQuestion(
         q: 'How many daughter cells does one round of mitosis make?',
         options: ['One', 'Two', 'Four', 'Eight'],
         answer: 1,
@@ -102,7 +51,7 @@ const studySets = <StudySet>[
         source: 'Your notes · page 1',
         friendPick: 2,
       ),
-      ProtoQuestion(
+      StudyQuestion(
         q: 'What do sister chromatids do during anaphase?',
         options: ['Join together', 'Copy themselves', 'Pull apart to opposite ends', 'Leave the nucleus'],
         answer: 2,
@@ -121,21 +70,21 @@ const studySets = <StudySet>[
     delta: 7,
     duelTopic: 3,
     topics: [
-      ProtoTopic('Greetings', '👋', Mastery.ready),
-      ProtoTopic('Numbers', '🔢', Mastery.solid),
-      ProtoTopic('Food', '🥐', Mastery.solid),
-      ProtoTopic('Passé composé', '⏪', Mastery.shaky),
-      ProtoTopic('Travel', '🧳', Mastery.shaky),
-      ProtoTopic('Family', '👪', Mastery.solid),
-      ProtoTopic('Weather', '🌦️', Mastery.unseen),
-      ProtoTopic('Directions', '🧭', Mastery.unseen),
-      ProtoTopic('Shopping', '🛍️', Mastery.shaky),
-      ProtoTopic('Time', '⏰', Mastery.solid),
-      ProtoTopic('Hobbies', '🎨', Mastery.unseen),
-      ProtoTopic('Body', '🦵', Mastery.unseen),
+      StudyTopic('Greetings', '👋', Mastery.ready),
+      StudyTopic('Numbers', '🔢', Mastery.solid),
+      StudyTopic('Food', '🥐', Mastery.solid),
+      StudyTopic('Passé composé', '⏪', Mastery.shaky),
+      StudyTopic('Travel', '🧳', Mastery.shaky),
+      StudyTopic('Family', '👪', Mastery.solid),
+      StudyTopic('Weather', '🌦️', Mastery.unseen),
+      StudyTopic('Directions', '🧭', Mastery.unseen),
+      StudyTopic('Shopping', '🛍️', Mastery.shaky),
+      StudyTopic('Time', '⏰', Mastery.solid),
+      StudyTopic('Hobbies', '🎨', Mastery.unseen),
+      StudyTopic('Body', '🦵', Mastery.unseen),
     ],
     questions: [
-      ProtoQuestion(
+      StudyQuestion(
         q: 'Which is correct for "I went to the market"?',
         options: ["J'ai allé au marché", 'Je suis allé au marché', 'Je vais au marché', "J'allais au marché"],
         answer: 1,
@@ -144,7 +93,7 @@ const studySets = <StudySet>[
         source: 'Eve\'s A2 topic guide',
         friendPick: 0,
       ),
-      ProtoQuestion(
+      StudyQuestion(
         q: '"Nous ___ mangé une pizza." Which word fills the gap?',
         options: ['sommes', 'avons', 'êtes', 'ont'],
         answer: 1,
@@ -153,7 +102,7 @@ const studySets = <StudySet>[
         source: 'Eve\'s A2 topic guide',
         friendPick: 1,
       ),
-      ProtoQuestion(
+      StudyQuestion(
         q: 'What is the past participle of "faire"?',
         options: ['fairé', 'fit', 'fait', 'faisé'],
         answer: 2,
@@ -172,21 +121,21 @@ const studySets = <StudySet>[
     delta: 3,
     duelTopic: 5,
     topics: [
-      ProtoTopic('Road signs', '🛑', Mastery.ready),
-      ProtoTopic('Right of way', '↔️', Mastery.solid),
-      ProtoTopic('Speed', '🏎️', Mastery.solid),
-      ProtoTopic('Roundabouts', '🔁', Mastery.ready),
-      ProtoTopic('Parking', '🅿️', Mastery.solid),
-      ProtoTopic('Hazards', '⚠️', Mastery.shaky),
-      ProtoTopic('Night driving', '🌙', Mastery.shaky),
-      ProtoTopic('Bad weather', '🌧️', Mastery.solid),
-      ProtoTopic('Pedestrians', '🚶', Mastery.solid),
-      ProtoTopic('Safety checks', '🔧', Mastery.unseen),
-      ProtoTopic('Motorways', '🛣️', Mastery.unseen),
-      ProtoTopic('Emergencies', '🚑', Mastery.unseen),
+      StudyTopic('Road signs', '🛑', Mastery.ready),
+      StudyTopic('Right of way', '↔️', Mastery.solid),
+      StudyTopic('Speed', '🏎️', Mastery.solid),
+      StudyTopic('Roundabouts', '🔁', Mastery.ready),
+      StudyTopic('Parking', '🅿️', Mastery.solid),
+      StudyTopic('Hazards', '⚠️', Mastery.shaky),
+      StudyTopic('Night driving', '🌙', Mastery.shaky),
+      StudyTopic('Bad weather', '🌧️', Mastery.solid),
+      StudyTopic('Pedestrians', '🚶', Mastery.solid),
+      StudyTopic('Safety checks', '🔧', Mastery.unseen),
+      StudyTopic('Motorways', '🛣️', Mastery.unseen),
+      StudyTopic('Emergencies', '🚑', Mastery.unseen),
     ],
     questions: [
-      ProtoQuestion(
+      StudyQuestion(
         q: 'A ball rolls into the road ahead. What should you expect?',
         options: ['Nothing, keep going', 'A child may follow it', 'The road is closed', 'A speed camera'],
         answer: 1,
@@ -195,7 +144,7 @@ const studySets = <StudySet>[
         source: 'Eve\'s driving theory guide',
         friendPick: 1,
       ),
-      ProtoQuestion(
+      StudyQuestion(
         q: 'In wet weather, your stopping distance can be about…',
         options: ['The same', 'Half as long', 'Twice as long', 'Ten times as long'],
         answer: 2,
@@ -204,7 +153,7 @@ const studySets = <StudySet>[
         source: 'Eve\'s driving theory guide',
         friendPick: 0,
       ),
-      ProtoQuestion(
+      StudyQuestion(
         q: 'What is the safest response to a dazzling oncoming headlight at night?',
         options: ['Flash your lights back', 'Look to the edge of your lane and slow down', 'Close one eye', 'Speed up to pass'],
         answer: 1,
@@ -218,35 +167,3 @@ const studySets = <StudySet>[
 ];
 
 StudySet setById(String? id) => studySets.firstWhere((s) => s.id == id, orElse: () => studySets.first);
-
-/// What the learner has earned on top of the sample data. In memory only, so a restart resets it.
-class Progress extends ChangeNotifier {
-  final _gain = <String, Map<int, int>>{}; // set id -> topic index -> levels gained
-
-  Mastery mastery(StudySet s, int i) => Mastery.values[(s.topics[i].mastery.index + (_gain[s.id]?[i] ?? 0)).clamp(0, 3)];
-
-  /// Moves a topic up one level (no-op at Ready) and tells the map.
-  void levelUp(StudySet s, int i) {
-    if (mastery(s, i) == Mastery.ready) return;
-    final g = _gain.putIfAbsent(s.id, () => {});
-    g[i] = (g[i] ?? 0) + 1;
-    notifyListeners();
-  }
-
-  bool get hasGains => _gain.isNotEmpty;
-
-  int _bonus(StudySet s) => ((_gain[s.id]?.values.fold(0, (a, b) => a + b) ?? 0) * 100 / (3 * s.topics.length)).round();
-
-  int readiness(StudySet s) => (s.readiness + _bonus(s)).clamp(0, 100);
-
-  int delta(StudySet s) => s.delta + _bonus(s);
-
-  /// The topic Eve suggests next: the sample's pick while it's shaky, else any shaky one, else null.
-  int? suggest(StudySet s) {
-    if (mastery(s, s.duelTopic) == Mastery.shaky) return s.duelTopic;
-    final i = List.generate(s.topics.length, (i) => i).indexWhere((i) => mastery(s, i) == Mastery.shaky);
-    return i < 0 ? null : i;
-  }
-}
-
-final progress = Progress();

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../data/duel_result.dart';
+import '../data/sample_sets.dart';
+import '../data/study_set.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/eve/eve.dart';
 import '../widgets/responsive.dart';
-import 'proto_data.dart';
-import 'proto_kit.dart';
+import '../widgets/study_widgets.dart';
+import '../widgets/view_settings.dart';
 import 'results_screen.dart';
 
 /// Step 3: the duel. Answer, see Eve's explanation and where it came from.
@@ -42,8 +45,8 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
   final _friend = <int>[];
   final _secs = <double>[];
 
-  List<ProtoQuestion> get _qs => widget.set.questions;
-  ProtoQuestion get _q => _qs[_qi];
+  List<StudyQuestion> get _qs => widget.set.questions;
+  StudyQuestion get _q => _qs[_qi];
   bool get _revealed => _picked != null;
 
   @override
@@ -160,7 +163,7 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
               Row(children: [
                 CircleIconButton(icon: Icons.close_rounded, label: 'Leave duel', onTap: _confirmLeave),
                 const SizedBox(width: 10),
-                ProtoPill(
+                CapsPill(
                   '${widget.solo ? 'Solo' : 'Live'} · Q${_qi + 1}/${_qs.length}',
                   bg: c.surface,
                   fg: c.ink,
@@ -234,7 +237,7 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
                         margin: const EdgeInsets.only(right: 3),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(9),
-                          color: q < marks.length ? (marks[q] ? Proto.right : Proto.wrong) : c.line,
+                          color: q < marks.length ? (marks[q] ? Pastel.right : Pastel.wrong) : c.line,
                         ),
                       ),
                     ),
@@ -273,10 +276,10 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
     Color bg = c.surface;
     Color fg = c.ink;
     if (_revealed && isRight) {
-      bg = Proto.right;
+      bg = Pastel.right;
       fg = Pastel.ink;
     } else if (_revealed && isPicked) {
-      bg = Proto.wrong;
+      bg = Pastel.wrong;
       fg = Pastel.ink;
     }
 

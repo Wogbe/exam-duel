@@ -1,29 +1,32 @@
 import 'package:flutter/material.dart';
 
-import 'prototype/duel_screen.dart';
-import 'prototype/map_screen.dart';
-import 'prototype/proto_data.dart';
-import 'prototype/proto_kit.dart';
-import 'prototype/results_screen.dart';
-import 'prototype/snap_screen.dart';
-import 'prototype/style_board.dart';
-import 'prototype/topic_screen.dart';
+import 'data/duel_result.dart';
+import 'data/map_builder.dart';
+import 'data/sample_sets.dart';
+import 'data/study_set.dart';
+import 'preview/style_board.dart';
+import 'screens/duel_screen.dart';
+import 'screens/map_screen.dart';
+import 'screens/results_screen.dart';
+import 'screens/snap_screen.dart';
+import 'screens/topic_screen.dart';
 import 'theme/app_theme.dart';
+import 'widgets/view_settings.dart';
 
 /// Design preview of the new direction (Snap → Map → Duel), with sample data.
-/// Run: flutter run -d chrome -t lib/main_prototype.dart
+/// Run: flutter run -d chrome -t lib/main_preview.dart
 /// Deep links on web: ?screen=board|snap|thinking|map|topic|duel|results&set=bio|fr|drive&dark=1&motion=0&fail=offline|error
 /// (duel also takes &pick=0..3 to answer the first question automatically).
-void main() => runApp(const ProtoApp());
+void main() => runApp(const PreviewApp());
 
-class ProtoApp extends StatefulWidget {
-  const ProtoApp({super.key});
+class PreviewApp extends StatefulWidget {
+  const PreviewApp({super.key});
 
   @override
-  State<ProtoApp> createState() => _ProtoAppState();
+  State<PreviewApp> createState() => _PreviewAppState();
 }
 
-class _ProtoAppState extends State<ProtoApp> {
+class _PreviewAppState extends State<PreviewApp> {
   final _q = Uri.base.queryParameters;
   late bool _dark = _q['dark'] == '1';
   late bool _motion = _q['motion'] != '0';
@@ -56,7 +59,7 @@ class _ProtoAppState extends State<ProtoApp> {
         theme: buildTheme(dark: false, accent: AccentChoice.aqua),
         darkTheme: buildTheme(dark: true, accent: AccentChoice.aqua),
         themeMode: _dark ? ThemeMode.dark : ThemeMode.light,
-        builder: (context, child) => ProtoScope(
+        builder: (context, child) => ViewSettings(
           motionOn: _motion,
           dark: _dark,
           toggleMotion: () => setState(() => _motion = !_motion),

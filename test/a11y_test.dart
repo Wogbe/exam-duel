@@ -1,8 +1,8 @@
-import 'package:exam_duel/prototype/duel_screen.dart';
-import 'package:exam_duel/prototype/proto_data.dart';
-import 'package:exam_duel/prototype/proto_kit.dart';
+import 'package:exam_duel/data/sample_sets.dart';
+import 'package:exam_duel/screens/duel_screen.dart';
 import 'package:exam_duel/theme/app_theme.dart';
 import 'package:exam_duel/widgets/common.dart';
+import 'package:exam_duel/widgets/view_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,7 +54,7 @@ void main() {
     final set = studySets.first;
     await t.pumpWidget(MaterialApp(
       theme: buildTheme(dark: false, accent: AccentChoice.aqua),
-      builder: (c, child) => ProtoScope(motionOn: false, dark: false, toggleMotion: () {}, toggleDark: () {}, child: child!),
+      builder: (c, child) => ViewSettings(motionOn: false, dark: false, toggleMotion: () {}, toggleDark: () {}, child: child!),
       home: Builder(builder: (context) => TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => DuelScreen(set: set, solo: true))), child: const Text('open'))),
     ));
     await t.tap(find.text('open'));

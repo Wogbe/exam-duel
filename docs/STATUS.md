@@ -1,6 +1,6 @@
 # Exam Duel status, 2026-10-12
 ## Working
-- Snap → Map → Duel prototype (README "Where the project is", run with `flutter run -d chrome -t lib/main_prototype.dart`), on sample data with no backend.
+- Snap → Map → Duel prototype (README "Where the project is", run with `flutter run -d chrome -t lib/main_preview.dart`), on sample data with no backend.
 - Party-trivia app still in `lib/` (online rooms, Quick Fire, Fact of the Day, streaks, Eve); on hold per README.
 - Supabase schema `supabase/migrations/20261009000000_init.sql` (587 lines). Run on PostgreSQL 16 against stubs only; not on a real Supabase project.
 - Edge function `supabase/functions/generate-questions/index.ts` (Anthropic call, writes questions via admin client).
