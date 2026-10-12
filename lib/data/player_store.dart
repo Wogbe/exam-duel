@@ -13,7 +13,7 @@ class Outfit {
   static const all = [
     Outfit('none', 'No outfit', 0),
     Outfit('glasses', 'Reading glasses', 60),
-    Outfit('scarf', 'Kente scarf', 120),
+    Outfit('scarf', 'Striped scarf', 120),
     Outfit('headphones', 'Headphones', 150),
     Outfit('cap', 'Graduation cap', 200),
     Outfit('jersey', 'Football jersey', 250),

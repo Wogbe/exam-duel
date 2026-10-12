@@ -4,14 +4,14 @@ A party trivia game for friends, hosted by Eve the owl. Built with Flutter and S
 
 ## What's in it
 
-- **Play with friends (online rooms):** the host creates a room and shares a 5-letter code (copy or WhatsApp). 2–12 friends join from their own phones. Everyone gets the same question at the same moment, with a live timer, "who has answered" avatars, emote reactions ("Chale!", "Eii!"), a reveal with a mini leaderboard, a podium with confetti, and rematches.
+- **Play with friends (online rooms):** the host creates a room and shares a 5-letter code (copy or WhatsApp). 2–12 friends join from their own phones. Everyone gets the same question at the same moment, with a live timer, "who has answered" avatars, emote reactions ("👏 Nice!", "😮 Whoa!"), a reveal with a mini leaderboard, a podium with confetti, and rematches.
 - **Fair scoring:** the server scores every answer with its own clock: 500 points for a correct answer, up to 500 more for speed, and +10% per streak step (max +50%). Players can't see the answer until the reveal.
 - **Ask Eve (AI questions):** the host types a topic (e.g. "Afrobeats", "Premier League") and Eve writes fresh questions with Claude. The bank fills the rest.
-- **Question bank:** 99 hand-checked questions in 8 categories: Ghana & Africa, History, Science, Geography, Sports, Music & Movies, Tech, Random.
+- **Question bank:** 99 hand-checked questions in 7 categories: History, Science, Geography, Sports, Music & Movies, Tech, Random.
 - **Fact of the Day:** a flip card when you open the app, with "Knew it" / "Mind blown" reactions and WhatsApp sharing. Reading it keeps your streak.
 - **Streaks:** a weekly strip, celebration screen, and streak freezes (earn one per 7 days, hold 2).
 - **Quick Fire (solo, offline):** 60 seconds, combos, personal best.
-- **Progress:** XP and levels, coins, and Eve's wardrobe (glasses, kente scarf, headphones, graduation cap, jersey, tie).
+- **Progress:** XP and levels, coins, and Eve's wardrobe (glasses, striped scarf, headphones, graduation cap, jersey, tie).
 - **Settings:** dark mode, Reduce motion, haptics, and Eve's eye colour (Honey, Aqua, Lavender).
 
 ## 1. Run it (offline mode, 5 minutes)
@@ -142,7 +142,7 @@ lib/
     room_controller.dart      live room state, timers, auto reveal/advance
   widgets/
     eve/eve.dart              Eve, animated CustomPainter port of the design SVG
-    common.dart               spring buttons, timer ring, confetti, kente bar…
+    common.dart               spring buttons, timer ring, confetti, colour-stripe bar…
     week_strip.dart
   screens/                    splash, onboarding, fact, streak, home, host setup,
                               join, room (lobby/game/results), solo, profile
@@ -164,7 +164,7 @@ test/player_store_test.dart   streak, freeze, wardrobe, settings tests
 ## Adding content
 
 - **Questions:** add lines to `assets/data/questions.json` in the form `{"c":"science","q":"…","a":"correct","w":["wrong1","wrong2","wrong3"]}`, then re-run `node tool/build_seed.mjs` and the seed SQL. Options are shuffled automatically.
-- **Facts:** add `{"c":"ghana","t":"…"}` to `assets/data/facts.json`. One fact per day, the same for everyone.
+- **Facts:** add `{"c":"science","t":"…"}` to `assets/data/facts.json`. One fact per day, the same for everyone.
 - **Emotes:** edit `_emotes` in `lib/screens/room_screen.dart`.
 
 ## Testing status

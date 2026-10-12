@@ -15,10 +15,11 @@ class Pastel {
   static const badBg = Color(0xFFFF9E82);
   static const ink = Color(0xFF15202B);
 
-  // Kente accents used on progress bars and Eve's wings.
-  static const kGold = Color(0xFFF2B705);
-  static const kGreen = Color(0xFF1F8A4C);
-  static const kRed = Color(0xFFC8452D);
+  /// Gold, for coins.
+  static const coin = Color(0xFFF2B705);
+
+  /// The game's own colour stripe, used on progress bars and in confetti.
+  static const stripe = [lime, sky, lav, peach, pink, mint];
 
   static const all = [lime, lav, sky, peach, pink, coral, mint, aqua];
 }

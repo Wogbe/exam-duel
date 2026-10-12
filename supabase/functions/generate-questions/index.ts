@@ -48,7 +48,8 @@ async function askClaude(topic: string, count: number): Promise<Q[]> {
       model: MODEL,
       max_tokens: 4000,
       system:
-        "You write multiple-choice trivia for a party game played by friends in Ghana. " +
+        "You write multiple-choice trivia for a party game played by friends around the world. " +
+        "Prefer facts that are known internationally, and write in clear, simple English. " +
         "Only include facts you are certain are true and that will not change soon. " +
         "Each question has exactly one correct option and three plausible wrong options. " +
         "Keep questions under 120 characters and options under 40. Mix easy, medium and hard. " +

@@ -320,7 +320,7 @@ class _SoloScreenState extends ConsumerState<SoloScreen> {
               CountUp(value: _xp, prefix: '+', style: T.disp(24, color: c.ink)),
               Text(' XP', style: T.body(15, w: FontWeight.w600, color: c.muted)),
               const SizedBox(width: 22),
-              const Icon(Icons.toll_rounded, color: Pastel.kGold),
+              const Icon(Icons.toll_rounded, color: Pastel.coin),
               const SizedBox(width: 4),
               CountUp(value: _coins, prefix: '+', style: T.disp(24, color: c.ink)),
             ]),

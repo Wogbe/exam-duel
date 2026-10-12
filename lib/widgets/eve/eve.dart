@@ -191,8 +191,9 @@ const _cream = Color(0xFFF6E7C9);
 const _face = Color(0xFF5A3826);
 const _lidC = Color(0xFF6E4631);
 const _gold = Color(0xFFF2B705);
-const _green = Color(0xFF1F8A4C);
-const _red = Color(0xFFC8452D);
+const _lav = Color(0xFFB9A8FF);
+const _lime = Color(0xFFD8F26B);
+const _sky = Color(0xFFA8D5F2);
 const _night = Color(0xFF1E1B2E);
 const _ink = Color(0xFF2A2238);
 
@@ -438,20 +439,22 @@ class _EvePainter extends CustomPainter {
     }
     c.drawPath(path, _fill(_wing));
     c.clipPath(path);
-    final x = left ? 8.0 : 142.0;
-    c.drawRect(Rect.fromLTWH(x, 164, 50, 6), _fill(_gold));
-    c.drawRect(Rect.fromLTWH(x, 170, 50, 3), _fill(_green));
-    c.drawRect(Rect.fromLTWH(x, 173, 50, 5), _fill(_gold));
-    c.drawRect(Rect.fromLTWH(x, 178, 50, 3), _fill(_red));
-    c.drawRect(Rect.fromLTWH(x, 181, 50, 12), _fill(_gold));
-    c.drawRect(Rect.fromLTWH(left ? 24 : 172, 164, 4, 30), _fill(_night));
-    c.drawRect(Rect.fromLTWH(left ? 36 : 160, 164, 4, 30), _fill(_green));
+    // Layered feather tips: soft caramel scallops, with the tips in Eve's eye colour.
+    final x0 = left ? 14.0 : 140.0;
+    for (var row = 0; row < 3; row++) {
+      final y = 150.0 + row * 13;
+      for (var f = 0; f < 4; f++) {
+        final cx = x0 + 6 + f * 12 + (row.isOdd ? 6 : 0);
+        c.drawCircle(Offset(cx, y), 7.5, _fill(_caramel, 0.55 + row * 0.15));
+      }
+    }
+    c.drawCircle(Offset(left ? 38 : 162, 186), 9, _fill(iris, 0.85));
     c.restore();
   }
 
   void _jersey(Canvas c) {
-    c.drawPath(_p('M28 140 Q100 170 172 140 L178 180 Q100 218 22 180 Z'), _fill(_green));
-    c.drawPath(_p('M30 152 Q100 182 170 152'), _stroke(_gold, 4));
+    c.drawPath(_p('M28 140 Q100 170 172 140 L178 180 Q100 218 22 180 Z'), _fill(iris));
+    c.drawPath(_p('M30 152 Q100 182 170 152'), _stroke(Colors.white, 4));
     c.drawPath(_p('M84 152 L100 166 L116 152'), _stroke(Colors.white, 4));
     _text(c, '10', 100, 196, 24, 1, center: true, color: Colors.white);
   }
@@ -463,13 +466,14 @@ class _EvePainter extends CustomPainter {
   }
 
   void _scarf(Canvas c) {
-    c.drawPath(_p('M32 128 Q100 160 168 128 L170 142 Q100 174 30 142 Z'), _fill(_gold));
-    c.drawPath(_p('M32 135 Q100 167 168 135'), _stroke(_green, 3));
-    c.drawPath(_p('M44 128 L44 146 M66 136 L66 154 M134 136 L134 154 M156 128 L156 146'), _stroke(_red, 3));
-    c.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(122, 146, 18, 40), const Radius.circular(4)), _fill(_gold));
-    c.drawRect(const Rect.fromLTWH(122, 156, 18, 4), _fill(_green));
-    c.drawRect(const Rect.fromLTWH(122, 166, 18, 4), _fill(_red));
-    c.drawRect(const Rect.fromLTWH(129, 146, 3, 40), _fill(_night, 0.7));
+    // Cosy striped scarf in the app's pastels.
+    c.drawPath(_p('M32 128 Q100 160 168 128 L170 142 Q100 174 30 142 Z'), _fill(_lav));
+    c.drawPath(_p('M32 135 Q100 167 168 135'), _stroke(_lime, 3));
+    c.drawPath(_p('M44 128 L44 146 M66 136 L66 154 M134 136 L134 154 M156 128 L156 146'), _stroke(_sky, 3));
+    c.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(122, 146, 18, 40), const Radius.circular(4)), _fill(_lav));
+    c.drawRect(const Rect.fromLTWH(122, 156, 18, 4), _fill(_lime));
+    c.drawRect(const Rect.fromLTWH(122, 166, 18, 4), _fill(_sky));
+    c.drawRect(const Rect.fromLTWH(122, 182, 18, 4), _fill(_night, 0.25));
   }
 
   void _headphones(Canvas c) {

@@ -79,7 +79,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Row(children: [
               CircleIconButton(icon: Icons.arrow_back_rounded, label: 'Back', onTap: () => Navigator.of(context).pop()),
               const Spacer(),
-              StatPill(icon: Icons.toll_rounded, iconColor: Pastel.kGold, value: '${store.coins}', label: '${store.coins} coins'),
+              StatPill(icon: Icons.toll_rounded, iconColor: Pastel.coin, value: '${store.coins}', label: '${store.coins} coins'),
             ]),
             const SizedBox(height: 16),
             Row(children: [
@@ -228,7 +228,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Icon(Icons.check_circle_rounded, color: c.ink, size: 20)
           else if (!owned)
             Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.toll_rounded, color: Pastel.kGold, size: 16),
+              const Icon(Icons.toll_rounded, color: Pastel.coin, size: 16),
               const SizedBox(width: 3),
               Text('${o.price}', style: T.disp(15, color: c.ink)),
             ]),

@@ -8,7 +8,6 @@ class Category {
   const Category(this.id, this.name, this.colorIndex);
 
   static const all = [
-    Category('ghana', 'Ghana & Africa', 3),
     Category('history', 'History', 1),
     Category('science', 'Science', 2),
     Category('geography', 'Geography', 6),

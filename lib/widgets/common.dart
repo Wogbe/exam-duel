@@ -257,11 +257,11 @@ class Avatar extends StatelessWidget {
       );
 }
 
-/// Progress bar; `kente` paints the gold/green/red stripes.
+/// Progress bar; `striped` paints the game's pastel colour stripe.
 class ProgressBar extends StatelessWidget {
-  const ProgressBar({super.key, required this.value, this.kente = false, this.height = 8, this.color, this.track});
+  const ProgressBar({super.key, required this.value, this.striped = false, this.height = 8, this.color, this.track});
   final double value;
-  final bool kente;
+  final bool striped;
   final double height;
   final Color? color;
   final Color? track;
@@ -278,8 +278,8 @@ class ProgressBar extends StatelessWidget {
           FractionallySizedBox(
             alignment: Alignment.centerLeft,
             widthFactor: value.clamp(0.0, 1.0),
-            child: kente
-                ? CustomPaint(painter: _KentePainter(), size: Size.infinite)
+            child: striped
+                ? CustomPaint(painter: _StripePainter(), size: Size.infinite)
                 : DecoratedBox(
                     decoration: BoxDecoration(color: color ?? c.ink, borderRadius: BorderRadius.circular(99)),
                   ),
@@ -290,22 +290,15 @@ class ProgressBar extends StatelessWidget {
   }
 }
 
-class _KentePainter extends CustomPainter {
+class _StripePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    const pattern = [
-      (Pastel.kGold, 10.0),
-      (Pastel.kGreen, 4.0),
-      (Pastel.kGold, 8.0),
-      (Pastel.kRed, 4.0),
-      (Pastel.ink, 2.0),
-    ];
+    const band = 12.0;
     var x = 0.0;
     var i = 0;
     while (x < size.width) {
-      final (color, w) = pattern[i % pattern.length];
-      canvas.drawRect(Rect.fromLTWH(x, 0, w, size.height), Paint()..color = color);
-      x += w;
+      canvas.drawRect(Rect.fromLTWH(x, 0, band, size.height), Paint()..color = Pastel.stripe[i % Pastel.stripe.length]);
+      x += band;
       i++;
     }
   }
@@ -484,7 +477,7 @@ class _ConfettiBurstState extends State<ConfettiBurst> with SingleTickerProvider
         vx: math.cos(angle) * speed,
         vy: math.sin(angle) * speed,
         spin: (r.nextDouble() - 0.5) * 14,
-        color: [...Pastel.all, Pastel.kGold, Pastel.kGreen, Pastel.kRed][i % 11],
+        color: [...Pastel.all, Pastel.coin, Pastel.ink][i % (Pastel.all.length + 2)],
         w: 6 + r.nextDouble() * 6,
         h: 10 + r.nextDouble() * 8,
       );

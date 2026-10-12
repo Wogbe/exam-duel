@@ -77,7 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   label: '${store.streak} day streak',
                 ),
                 const SizedBox(width: 8),
-                StatPill(icon: Icons.toll_rounded, iconColor: Pastel.kGold, value: '${store.coins}', label: '${store.coins} coins'),
+                StatPill(icon: Icons.toll_rounded, iconColor: Pastel.coin, value: '${store.coins}', label: '${store.coins} coins'),
                 const SizedBox(width: 8),
                 Pressable(
                   onTap: () => _open(const ProfileScreen()),
@@ -254,7 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text('$games games · $wins wins', style: T.body(13, color: c.muted)),
           ]),
           const SizedBox(height: 12),
-          ProgressBar(value: progress, kente: true, height: 10),
+          ProgressBar(value: progress, striped: true, height: 10),
           const SizedBox(height: 8),
           Text('${(progress * 500).round()} / 500 XP to level ${level + 1}', style: T.body(13, color: c.muted)),
         ]),
@@ -371,7 +371,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               label: '${store.streak} day streak',
             ),
             const SizedBox(width: 8),
-            StatPill(icon: Icons.toll_rounded, iconColor: Pastel.kGold, value: '${store.coins}', label: '${store.coins} coins'),
+            StatPill(icon: Icons.toll_rounded, iconColor: Pastel.coin, value: '${store.coins}', label: '${store.coins} coins'),
             const SizedBox(width: 12),
             Pressable(
               onTap: () => _open(const ProfileScreen()),

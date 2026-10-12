@@ -12,7 +12,7 @@ import '../widgets/common.dart';
 import '../widgets/eve/eve.dart';
 import '../widgets/responsive.dart';
 
-const _emotes = ['Chale!', 'Eii!', 'Sharp!', 'Herh!', 'Too easy', 'GG'];
+const _emotes = ['👏 Nice!', '😮 Whoa!', '😅 So close!', '😎 Too easy', '🔥 On fire', '🤝 GG'];
 
 /// One online room: lobby → live questions → results → rematch.
 /// Owns the [RoomController] and switches views by room status.
@@ -230,7 +230,7 @@ class _PlayerChip extends StatelessWidget {
               right: -2,
               child: Container(
                 padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(color: Pastel.kGold, shape: BoxShape.circle, border: Border.all(color: c.bg, width: 2)),
+                decoration: BoxDecoration(color: Pastel.coin, shape: BoxShape.circle, border: Border.all(color: c.bg, width: 2)),
                 child: const Icon(Icons.star_rounded, size: 12, color: Pastel.ink),
               ),
             ),
@@ -529,7 +529,7 @@ class _GameView extends ConsumerWidget {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('QUESTION ${room.currentIndex + 1} OF ${room.questionCount}', style: T.micro(color: c.muted)),
                       const SizedBox(height: 8),
-                      ProgressBar(value: (room.currentIndex + (reveal ? 1 : 0)) / room.questionCount.clamp(1, 99), kente: true, height: 10),
+                      ProgressBar(value: (room.currentIndex + (reveal ? 1 : 0)) / room.questionCount.clamp(1, 99), striped: true, height: 10),
                     ]),
                   ),
                   const SizedBox(width: 16),
@@ -618,7 +618,7 @@ class _GameView extends ConsumerWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('QUESTION ${room.currentIndex + 1} OF ${room.questionCount}', style: T.micro(color: c.muted)),
               const SizedBox(height: 8),
-              ProgressBar(value: (room.currentIndex + (reveal ? 1 : 0)) / room.questionCount.clamp(1, 99), kente: true),
+              ProgressBar(value: (room.currentIndex + (reveal ? 1 : 0)) / room.questionCount.clamp(1, 99), striped: true),
             ]),
           ),
           const SizedBox(width: 12),
@@ -1017,7 +1017,7 @@ class _ResultsViewState extends ConsumerState<_ResultsView> {
                         CountUp(value: xp, prefix: '+', style: T.disp(26, color: c.ink)),
                         Text(' XP', style: T.body(15, w: FontWeight.w600, color: c.muted)),
                         const SizedBox(width: 18),
-                        const Icon(Icons.toll_rounded, color: Pastel.kGold, size: 22),
+                        const Icon(Icons.toll_rounded, color: Pastel.coin, size: 22),
                         const SizedBox(width: 4),
                         CountUp(value: coins, prefix: '+', style: T.disp(26, color: c.ink)),
                       ]),
