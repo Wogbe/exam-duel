@@ -1,13 +1,28 @@
 # Exam Duel
 
-A party trivia game for friends, hosted by Eve the owl. Built with Flutter and Supabase, following the Exam Duel design (pastel bento, Urbanist + Figtree, Eve's moods and outfits).
+An AI-powered, gamified learning app for anyone learning anything, anywhere, hosted by Eve the owl. You bring your own material (type a topic, paste notes, snap a photo), Eve turns it into a map of topics, and you practise alone or duel a friend to turn each topic from New to Ready. Built with Flutter and Supabase (pastel bento, Urbanist + Figtree, Eve's moods and outfits).
 
-## What's in it
+## Where the project is
+
+The new direction, **Snap → Map → Duel**, is built as a UI preview that runs on sample data. There is no AI or backend behind it yet; that comes after the look and feel are settled. The plan and decisions live in `docs/PROJECT.md`.
+
+```bash
+flutter run -d chrome -t lib/main_prototype.dart
+```
+
+- **Snap:** type or paste what you're learning (photo and file are sample stubs). It has waiting, offline and error states; add `?fail=offline` or `?fail=error` to the web URL to preview them.
+- **Map:** one tile per topic (New, Shaky, Solid, Ready). Tiles, readiness and Eve's suggestion update as you practise.
+- **Topic → Duel or solo → Results:** two right answers move a topic up a level. "Show me where" shows the line in your material that backs the answer, and Report flags a question.
+- **Deep links on web:** `?screen=board|snap|thinking|map|topic|duel|results&set=bio|fr|drive&dark=1&motion=0`.
+
+The sections below describe the party-trivia game and Supabase backend that are already in the repo. They are on hold and will be reshaped around the new direction.
+
+## What's in the party game today
 
 - **Play with friends (online rooms):** the host creates a room and shares a 5-letter code (copy or WhatsApp). 2–12 friends join from their own phones. Everyone gets the same question at the same moment, with a live timer, "who has answered" avatars, emote reactions ("👏 Nice!", "😮 Whoa!"), a reveal with a mini leaderboard, a podium with confetti, and rematches.
 - **Fair scoring:** the server scores every answer with its own clock: 500 points for a correct answer, up to 500 more for speed, and +10% per streak step (max +50%). Players can't see the answer until the reveal.
-- **Ask Eve (AI questions):** the host types a topic (e.g. "Afrobeats", "Premier League") and Eve writes fresh questions with Claude. The bank fills the rest.
-- **Question bank:** 99 hand-checked questions in 7 categories: History, Science, Geography, Sports, Music & Movies, Tech, Random.
+- **Ask Eve (AI questions):** the host types a topic (e.g. "Space exploration", "Premier League") and Eve writes fresh questions with Claude. The bank fills the rest.
+- **Question bank:** 99 starter questions in 7 categories: History, Science, Geography, Sports, Music & Movies, Tech, Random. They are general-knowledge and not tied to one country.
 - **Fact of the Day:** a flip card when you open the app, with "Knew it" / "Mind blown" reactions and WhatsApp sharing. Reading it keeps your streak.
 - **Streaks:** a weekly strip, celebration screen, and streak freezes (earn one per 7 days, hold 2).
 - **Quick Fire (solo, offline):** 60 seconds, combos, personal best.
@@ -130,6 +145,8 @@ host after 4.5 s  ─► next_question … ─► finished ─► rematch = star
 
 ```
 lib/
+  main_prototype.dart         entry point for the Snap → Map → Duel preview
+  prototype/                  preview screens, sample data, progress store
   main.dart, app.dart, config.dart
   theme/app_theme.dart        colours, accents, type styles (from the design system)
   data/
@@ -158,7 +175,7 @@ supabase/
   seed.sql                    generated question bank
   functions/generate-questions/index.ts
 tool/build_seed.mjs
-test/player_store_test.dart   streak, freeze, wardrobe, settings tests
+test/                         streak/wardrobe tests, Snap states, map progress, keyboard and contrast
 ```
 
 ## Adding content
@@ -177,7 +194,9 @@ test/player_store_test.dart   streak, freeze, wardrobe, settings tests
   - early reveal when everyone has answered, and timeout reveal;
   - host advance and the 12 s fallback;
   - rematch, AI batch ordering, host hand-off and room cleanup.
-- The Flutter code was written and reviewed without a Flutter SDK, which couldn't be installed in the build environment. Run `flutter analyze` and `flutter test` first, and fix any small API mismatches with your Flutter version.
+- The Flutter code now runs: `flutter analyze` reports 3 info-level notices and `flutter test` passes.
+- The preview has widget tests for Snap's error states, map progress (including a tile → solo practice → results → map flow), keyboard use of buttons, and timer contrast.
+- Not tried yet: a real device, and the online rooms against a live Supabase project.
 
 ## Ideas for next
 

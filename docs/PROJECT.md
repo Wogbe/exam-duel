@@ -1,6 +1,6 @@
 # Exam Duel plan
 Updated: 2026-10-12
-Stage: Build   Current focus: Neutral starter content + README rewrite
+Stage: Build   Current focus: UI milestone complete; owner to review and choose next (open ui-review items, app name, real device test, backend)
 
 Direction: AI-powered gamified learning for anyone, user-supplied content. UI first; no Supabase/auth/backend until the owner asks.
 Signature feature: Snap -> Map -> Duel.
@@ -14,7 +14,7 @@ Signature feature: Snap -> Map -> Duel.
 - [x] Map screen + topic tiles: tiles, readiness and Eve's suggestion update from duel/solo results via `progress` (in memory); "Show me where" and Report were already on the duel reveal. ui-review and security-check run; open items below
 - [x] Solo practice and Duel/Results wired to the map: tile -> solo/duel -> results -> map shows the new level (end-to-end test). Streak unified, caption and Eve prompt fixed. Questions are still the same 3 samples for every tile (the AI writes them per topic later)
 - [x] Accessibility fixes: `Pressable` is keyboard-focusable (Tab, Enter/Space, visible ring); TimerRing low-time text 4.6:1 in light mode (tests); ui-review and security-check run. Not yet checked: a full keyboard-only walk through the app, 48 dp target size on all 35 Pressables
-- [ ] Neutral starter content (less West-Africa-leaning) and README rewrite to new direction — done when no regional bias remains; security-check after code tasks
+- [x] Neutral starter content and README rewrite: 21 Ghana/West-Africa-specific questions and 8 facts replaced with general-knowledge ones (still 99 questions, 38 facts; seed.sql regenerated); README now describes the learning-app direction, the preview and how to run it. Kept: Mansa Musa, Kilimanjaro, Nile, Sahara, Wakanda (world knowledge). Content only, so no security-check
 
 ### Open from the ui-reviews (Map, Topic, Duel)
 - Readiness number jumps without counting up; dot chart has no semantics
