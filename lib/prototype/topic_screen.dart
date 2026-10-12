@@ -75,7 +75,7 @@ class TopicScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Expanded(child: _Stat(label: 'Questions', child: Text('10', style: T.num(40, color: c.ink)))),
+                Expanded(child: _Stat(label: 'Questions', child: Text('${set.questions.length}', style: T.num(40, color: c.ink)))),
               ]),
             ),
             const SizedBox(height: 14),

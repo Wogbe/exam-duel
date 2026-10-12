@@ -65,4 +65,42 @@ void main() {
     expect(t.takeException(), isNull);
     expect(progress.mastery(set, topic).index, before.index + 1);
   });
+
+  testWidgets('tile -> solo practice -> results -> back to map shows the new level', (t) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    await t.binding.setSurfaceSize(const Size(480, 1400));
+    await t.pumpWidget(MaterialApp(
+      theme: buildTheme(dark: false, accent: AccentChoice.aqua),
+      builder: (c, child) => ProtoScope(motionOn: false, dark: false, toggleMotion: () {}, toggleDark: () {}, child: child!),
+      home: MapScreen(set: set),
+    ));
+    await t.pump(const Duration(seconds: 2));
+    final topic = progress.suggest(set)!;
+    final before = progress.mastery(set, topic);
+    final tile = find.byType(MasteryTile).at(topic);
+    await t.ensureVisible(tile);
+    await t.pump();
+    await t.tap(tile);
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    await t.tap(find.text('Practise solo'));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    for (var i = 0; i < set.questions.length; i++) {
+      final q = set.questions[i];
+      await t.tap(find.text(q.options[q.answer]));
+      await t.pump(const Duration(milliseconds: 500));
+      await t.tap(find.text(i == set.questions.length - 1 ? 'See results' : 'Next question'));
+      await t.pump(const Duration(milliseconds: 500));
+    }
+    await t.pump(const Duration(seconds: 3));
+    await t.ensureVisible(find.text('Back to map'));
+    await t.pump();
+    await t.tap(find.text('Back to map'));
+    await t.pump();
+    await t.pump(const Duration(seconds: 3));
+    expect(t.takeException(), isNull);
+    expect(progress.mastery(set, topic).index, before.index + 1);
+    expect(find.byType(MapScreen), findsOneWidget);
+  });
 }

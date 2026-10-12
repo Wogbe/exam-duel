@@ -55,6 +55,9 @@ class StudySet {
   ProtoTopic get focus => topics[duelTopic];
 }
 
+/// The sample streak, shown the same on every screen.
+const sampleStreak = 4;
+
 /// The sample friend.
 const friendName = 'Leo';
 
@@ -229,6 +232,8 @@ class Progress extends ChangeNotifier {
     g[i] = (g[i] ?? 0) + 1;
     notifyListeners();
   }
+
+  bool get hasGains => _gain.isNotEmpty;
 
   int _bonus(StudySet s) => ((_gain[s.id]?.values.fold(0, (a, b) => a + b) ?? 0) * 100 / (3 * s.topics.length)).round();
 

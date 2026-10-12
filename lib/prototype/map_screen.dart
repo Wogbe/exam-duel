@@ -28,6 +28,28 @@ class MapScreen extends StatelessWidget {
     return ListenableBuilder(listenable: progress, builder: (context, _) => _page(context, c));
   }
 
+  /// Eve's nudge. Only a button while there is something shaky to practise.
+  Widget _eve(BuildContext context, int? suggested) {
+    final row = Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      Eve(mood: suggested == null ? EveMood.proud : EveMood.happy, size: 70, iris: context.c.iris, motion: context.motion),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 18),
+          child: Bubble(suggested == null
+              ? 'Nothing is shaky. Tap any tile to keep it Ready.'
+              : '${set.topics[suggested].name} is shaky. Challenge a friend on it? ⚔️'),
+        ),
+      ),
+    ]);
+    if (suggested == null) return row;
+    return Pressable(
+      onTap: () => _openTopic(context, suggested),
+      semanticLabel: '${set.topics[suggested].name} is shaky. Challenge a friend on it.',
+      child: row,
+    );
+  }
+
   Widget _page(BuildContext context, AppColors c) {
     final suggested = progress.suggest(set);
     final readiness = progress.readiness(set);
@@ -52,9 +74,9 @@ class MapScreen extends StatelessWidget {
                     Text(set.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.disp(26, color: c.ink)),
                   ]),
                 ),
-                const ProtoPill('4', icon: Icons.local_fire_department_rounded),
+                const ProtoPill('$sampleStreak', icon: Icons.local_fire_department_rounded),
               ]),
-              if (fresh) ...[
+              if (fresh && !progress.hasGains) ...[
                 const SizedBox(height: 12),
                 FadeRise(
                   child: Text(
@@ -90,27 +112,7 @@ class MapScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              FadeRise(
-                delay: const Duration(milliseconds: 160),
-                child: Pressable(
-                  onTap: suggested == null ? null : () => _openTopic(context, suggested),
-                  semanticLabel: suggested == null
-                      ? 'Nothing is shaky right now.'
-                      : '${set.topics[suggested].name} is shaky. Challenge a friend on it.',
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Eve(mood: EveMood.happy, size: 70, iris: c.iris, motion: context.motion),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 18),
-                        child: Bubble(suggested == null
-                            ? 'Nothing is shaky right now. Nice work!'
-                            : '${set.topics[suggested].name} is shaky. Challenge a friend on it? ⚔️'),
-                      ),
-                    ),
-                  ]),
-                ),
-              ),
+              FadeRise(delay: const Duration(milliseconds: 160), child: _eve(context, suggested)),
               const SizedBox(height: 14),
               Wrap(spacing: 12, runSpacing: 6, children: [
                 for (final m in Mastery.values)

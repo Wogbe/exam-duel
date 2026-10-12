@@ -106,7 +106,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
               Row(children: [
                 CircleIconButton(icon: Icons.close_rounded, label: 'Close', onTap: () => Navigator.of(context).maybePop()),
                 const Spacer(),
-                if (!r.solo) const ProtoPill('4-day streak', icon: Icons.local_fire_department_rounded),
+                if (!r.solo) const ProtoPill('$sampleStreak-day streak', icon: Icons.local_fire_department_rounded),
               ]),
               const SizedBox(height: 8),
               Center(
@@ -145,7 +145,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 children: [
                   _StatTile(Pastel.lav, 'Accuracy', '${(100 * r.rightCount / r.correct.length).round()}%', 500, motion),
                   _StatTile(Pastel.sky, 'Avg time', '${avg.toStringAsFixed(1)}s', 580, motion),
-                  _StatTile(Pastel.peach, 'Streak', '5 days', 660, motion),
+                  _StatTile(Pastel.peach, 'Streak', '$sampleStreak days', 660, motion),
                   _StatTile(Pastel.lime, 'XP earned', '+${10 * r.rightCount + 10}', 740, motion),
                 ],
               ),
