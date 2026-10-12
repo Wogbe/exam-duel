@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../data/map_builder.dart';
 import '../data/sample_sets.dart';
 import '../data/study_set.dart';
+import '../state/library.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/eve/eve.dart';
@@ -114,7 +115,10 @@ class _SnapScreenState extends State<SnapScreen> {
     }
   }
 
-  void _done() => Navigator.of(context).pushReplacement(softRoute(MapScreen(set: _building!, fresh: true)));
+  void _done() {
+    library.add(_building!);
+    Navigator.of(context).pushReplacement(softRoute(MapScreen(set: _building!, fresh: true)));
+  }
 
   @override
   Widget build(BuildContext context) {

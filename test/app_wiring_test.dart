@@ -1,7 +1,10 @@
 import 'package:exam_duel/app.dart';
 import 'package:exam_duel/data/local_bank.dart';
 import 'package:exam_duel/data/player_store.dart';
+import 'package:exam_duel/data/sample_sets.dart';
 import 'package:exam_duel/screens/home_screen.dart';
+import 'package:exam_duel/screens/map_screen.dart';
+import 'package:exam_duel/state/library.dart';
 import 'package:exam_duel/screens/snap_screen.dart';
 import 'package:exam_duel/state/providers.dart';
 import 'package:exam_duel/theme/app_theme.dart';
@@ -57,5 +60,42 @@ void main() {
     await t.pump(const Duration(seconds: 1));
     expect(find.text('Learn anything'), findsWidgets);
     expect(t.takeException(), isNull);
+  });
+
+  testWidgets('Home lists saved maps and opens one', (t) async {
+    final store = await _store(reduceMotion: true);
+    await t.binding.setSurfaceSize(const Size(800, 1600));
+    await t.pumpWidget(ProviderScope(
+      overrides: [playerStoreProvider.overrideWith((ref) => store)],
+      child: MaterialApp(theme: buildTheme(dark: false, accent: store.accent), home: const HomeScreen(), builder: (c, child) => ViewSettings(motionOn: false, dark: false, toggleMotion: () {}, toggleDark: () {}, child: child!)),
+    ));
+    await t.pump(const Duration(seconds: 1));
+    expect(find.text('YOUR MAPS'), findsNothing);
+    library.add(studySets.first);
+    await t.pump();
+    expect(find.text('YOUR MAPS'), findsOneWidget);
+    await t.tap(find.text(studySets.first.title));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    expect(find.byType(MapScreen), findsOneWidget);
+  });
+
+  testWidgets('finishing Snap saves the new map to the library', (t) async {
+    await t.binding.setSurfaceSize(const Size(800, 1600));
+    final pick = studySets[1];
+    await t.pumpWidget(MaterialApp(
+      theme: buildTheme(dark: false, accent: AccentChoice.aqua),
+      builder: (c, child) => ViewSettings(motionOn: false, dark: false, toggleMotion: () {}, toggleDark: () {}, child: child!),
+      home: const SnapScreen(),
+    ));
+    await t.pump(const Duration(seconds: 1));
+    await t.ensureVisible(find.text(pick.title));
+    await t.tap(find.text(pick.title));
+    await t.pump();
+    await t.pump(const Duration(seconds: 3));
+    expect(library.maps.first.id, pick.id);
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    expect(find.byType(MapScreen), findsOneWidget);
   });
 }

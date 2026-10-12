@@ -7,6 +7,8 @@ import 'app.dart';
 import 'config.dart';
 import 'data/local_bank.dart';
 import 'data/player_store.dart';
+import 'state/library.dart';
+import 'state/progress.dart';
 import 'state/providers.dart';
 
 Future<void> main() async {
@@ -18,6 +20,8 @@ Future<void> main() async {
   }
   final bank = await LocalBank.load();
   final store = await PlayerStore.load();
+  await progress.load();
+  await library.load();
 
   runApp(ProviderScope(
     overrides: [

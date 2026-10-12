@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/player_store.dart';
+import '../data/study_set.dart';
+import '../state/library.dart';
+import '../state/progress.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -11,6 +14,7 @@ import '../widgets/week_strip.dart';
 import 'fact_screen.dart';
 import 'host_setup_screen.dart';
 import 'join_screen.dart';
+import 'map_screen.dart';
 import 'profile_screen.dart';
 import 'snap_screen.dart';
 import 'solo_screen.dart';
@@ -116,6 +120,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   height: 120,
                   onTap: () => _open(const SnapScreen())),
               const SizedBox(height: 12),
+              _myMaps(c, gap: 12),
               Row(children: [
                 Expanded(
                   child: _tile(
@@ -253,6 +258,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       );
 
+  /// Maps the learner has built, to pick up where they left off. Nothing shows until there is one.
+  Widget _myMaps(AppColors c, {required double gap}) => ListenableBuilder(
+        listenable: Listenable.merge([library, progress]),
+        builder: (context, _) {
+          final maps = library.maps.take(3).toList();
+          if (maps.isEmpty) return const SizedBox.shrink();
+          return Padding(
+            padding: EdgeInsets.only(bottom: gap),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text('YOUR MAPS', style: mono(color: c.muted)),
+              const SizedBox(height: 10),
+              for (final s in maps) _mapRow(c, s),
+            ]),
+          );
+        },
+      );
+
+  Widget _mapRow(AppColors c, StudySet s) {
+    final ready = progress.readiness(s);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Pressable(
+        onTap: () {
+          library.add(s); // opening a map moves it to the top
+          _open(MapScreen(set: s));
+        },
+        semanticLabel: '${s.title}, $ready percent ready',
+        scale: 0.98,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 64),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(22), border: Border.all(color: c.line, width: 1.5)),
+          child: Row(children: [
+            Text(s.focus.emoji, style: const TextStyle(fontSize: 26)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(s.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.disp(18, color: c.ink)),
+                Text('${s.topics.length} topics', style: T.body(13, color: c.muted)),
+              ]),
+            ),
+            Text('$ready%', style: T.disp(20, color: c.ink)),
+            const SizedBox(width: 6),
+            Icon(Icons.chevron_right_rounded, color: c.muted),
+          ]),
+        ),
+      ),
+    );
+  }
+
   Widget _levelCard(AppColors c, int level, double progress, int games, int wins) => Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(28)),
@@ -344,6 +399,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ]),
                   ),
                   const SizedBox(height: 16),
+                  _myMaps(c, gap: 16),
                   IntrinsicHeight(
                     child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                       Expanded(child: _factWide(c, store, fact.text)),

@@ -4,6 +4,11 @@ class StudyTopic {
   const StudyTopic(this.name, this.emoji, this.mastery);
   final String name, emoji;
   final Mastery mastery;
+
+  Map<String, dynamic> toJson() => {'name': name, 'emoji': emoji, 'mastery': mastery.index};
+
+  factory StudyTopic.fromJson(Map<String, dynamic> j) =>
+      StudyTopic(j['name'] as String, j['emoji'] as String, Mastery.values[(j['mastery'] as int).clamp(0, 3)]);
 }
 
 class StudyQuestion {
@@ -27,6 +32,24 @@ class StudyQuestion {
 
   /// What the sample friend answers, to make the duel feel alive.
   final int friendPick;
+
+  Map<String, dynamic> toJson() =>
+      {'q': q, 'options': options, 'answer': answer, 'why': why, 'quote': quote, 'source': source, 'friendPick': friendPick};
+
+  factory StudyQuestion.fromJson(Map<String, dynamic> j) {
+    final options = (j['options'] as List).cast<String>();
+    final answer = j['answer'] as int;
+    if (options.length != 4 || answer < 0 || answer > 3) throw const FormatException('bad question');
+    return StudyQuestion(
+      q: j['q'] as String,
+      options: options,
+      answer: answer,
+      why: j['why'] as String,
+      quote: j['quote'] as String,
+      source: j['source'] as String,
+      friendPick: (j['friendPick'] as int).clamp(0, 3),
+    );
+  }
 }
 
 class StudySet {
@@ -49,4 +72,33 @@ class StudySet {
   final List<StudyQuestion> questions;
 
   StudyTopic get focus => topics[duelTopic];
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'from': from,
+        'readiness': readiness,
+        'delta': delta,
+        'duelTopic': duelTopic,
+        'topics': [for (final t in topics) t.toJson()],
+        'questions': [for (final q in questions) q.toJson()],
+      };
+
+  /// Throws if the data is not a usable set, so a corrupt saved map can be skipped.
+  factory StudySet.fromJson(Map<String, dynamic> j) {
+    final topics = [for (final t in j['topics'] as List) StudyTopic.fromJson(t as Map<String, dynamic>)];
+    final questions = [for (final q in j['questions'] as List) StudyQuestion.fromJson(q as Map<String, dynamic>)];
+    final duelTopic = j['duelTopic'] as int;
+    if (topics.isEmpty || questions.isEmpty || duelTopic < 0 || duelTopic >= topics.length) throw const FormatException('bad set');
+    return StudySet(
+      id: j['id'] as String,
+      title: j['title'] as String,
+      from: j['from'] as String,
+      topics: topics,
+      readiness: (j['readiness'] as int).clamp(0, 100),
+      delta: j['delta'] as int,
+      duelTopic: duelTopic,
+      questions: questions,
+    );
+  }
 }

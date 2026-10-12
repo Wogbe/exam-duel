@@ -12,6 +12,7 @@ flutter run -d chrome -t lib/main_preview.dart
 
 - **Snap:** type or paste what you're learning (photo and file are sample stubs). It has waiting, offline and error states; add `?fail=offline` or `?fail=error` to the web URL to preview them.
 - **Map:** one tile per topic (New, Shaky, Solid, Ready). Tiles, readiness and Eve's suggestion update as you practise.
+- **Your maps:** every map you build is saved on the device with its progress, and Home lists the three most recent under "Your maps" so you can pick up where you left off. (The preview entry keeps everything in memory only.)
 - **Topic → Duel or solo → Results:** two right answers move a topic up a level. "Show me where" shows the line in your material that backs the answer, and Report flags a question.
 - **Deep links on web:** `?screen=board|snap|thinking|map|topic|duel|results&set=bio|fr|drive&dark=1&motion=0`.
 
@@ -162,7 +163,8 @@ lib/
   state/
     providers.dart            Riverpod providers
     room_controller.dart      live room state, timers, auto reveal/advance
-    progress.dart             topic mastery and readiness earned so far (in memory)
+    progress.dart             topic mastery and readiness earned so far (saved on the device)
+    library.dart              the maps you have built, newest first (saved on the device)
   widgets/
     eve/eve.dart              Eve, animated CustomPainter port of the design SVG
     common.dart               spring buttons, timer ring, confetti, colour-stripe bar…
