@@ -106,64 +106,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 22),
               Text('$greet, ${store.nickname}', style: T.body(15, color: c.muted)),
               const SizedBox(height: 6),
-              Text('Ready to outsmart your friends?', style: T.disp(40, color: c.ink)),
+              Text('What are you\nlearning today?', style: T.disp(40, color: c.ink)),
               const SizedBox(height: 18),
               WeekStrip(activeDays: store.activeDays),
               const SizedBox(height: 46),
               _hero(c, store.outfit, motion, atRisk),
               const SizedBox(height: 12),
-              _tile(c,
-                  bg: Pastel.pink,
-                  tag: 'Your notes',
-                  title: 'Learn anything',
-                  icon: Icons.auto_awesome_rounded,
-                  height: 120,
-                  onTap: () => _open(const SnapScreen())),
-              const SizedBox(height: 12),
               _myMaps(c, gap: 12),
               Row(children: [
-                Expanded(
-                  child: _tile(
-                    c,
-                    bg: Pastel.lime,
-                    tag: 'Got a code?',
-                    title: 'Join a\nroom',
-                    icon: Icons.login_rounded,
-                    onTap: () => _open(const JoinScreen()),
-                  ),
-                ),
+                Expanded(child: _friendsTile(c)),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _tile(
-                    c,
-                    bg: Pastel.sky,
-                    tag: store.bestQuickFire > 0 ? 'Best ${store.bestQuickFire}' : 'Solo · 60 s',
-                    title: 'Quick\nFire',
-                    icon: Icons.bolt_rounded,
-                    onTap: () => _open(const SoloScreen()),
-                  ),
-                ),
+                Expanded(child: _joinTile(c)),
               ]),
               const SizedBox(height: 12),
-              Pressable(
-                onTap: () => _open(const FactScreen()),
-                semanticLabel: 'Fact of the day',
-                scale: 0.97,
-                child: Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(color: Pastel.lav, borderRadius: BorderRadius.circular(28)),
-                  child: Row(children: [
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Tag(store.factSeenToday ? 'Read today' : 'New today'),
-                        const SizedBox(height: 10),
-                        Text('Fact of the day', style: T.disp(22, color: Pastel.ink)),
-                      ]),
-                    ),
-                    _goChip(),
-                  ]),
-                ),
-              ),
+              Row(children: [
+                Expanded(child: _quickFireTile(c, store)),
+                const SizedBox(width: 12),
+                Expanded(child: _factTile(c, store)),
+              ]),
               const SizedBox(height: 12),
               _levelCard(c, store.level, store.levelProgress, store.gamesPlayed, store.wins),
             ],
@@ -174,8 +134,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _hero(AppColors c, String outfit, bool motion, bool atRisk) => Pressable(
-        onTap: () => _open(const HostSetupScreen()),
-        semanticLabel: 'Play with friends: host a room',
+        onTap: () => _open(const SnapScreen()),
+        semanticLabel: 'Learn anything: turn your notes into a game',
         scale: 0.97,
         child: Stack(clipBehavior: Clip.none, children: [
           Container(
@@ -184,14 +144,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(color: c.acc, borderRadius: BorderRadius.circular(32)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Tag('2–12 players · live'),
+              const Tag('Notes · photos · topics'),
               const SizedBox(height: 10),
-              Text('Play with\nfriends', style: T.disp(46, color: Pastel.ink)),
+              Text('Learn\nanything', style: T.disp(46, color: Pastel.ink)),
               const SizedBox(height: 8),
               SizedBox(
                 width: 190,
                 child: Text(
-                  atRisk ? 'Streak at risk… one quick round?' : 'Host a room. Share the code. Battle it out.',
+                  atRisk ? 'Streak at risk… practise one topic?' : 'Turn what you are studying into a game.',
                   style: T.body(14, w: FontWeight.w500, color: Pastel.ink, height: 1.3),
                 ),
               ),
@@ -275,15 +235,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
       );
 
+  void _remove(StudySet s) {
+    final at = library.remove(s.id);
+    if (at == null) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text('${s.title} removed'),
+        action: SnackBarAction(label: 'Undo', onPressed: () => library.restore(s, at)),
+      ));
+  }
+
   Widget _mapRow(AppColors c, StudySet s) {
     final ready = progress.readiness(s);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Pressable(
-        onTap: () {
-          library.add(s); // opening a map moves it to the top
-          _open(MapScreen(set: s));
-        },
+        // Opening a map moves it to the top, once we are back, so the list does not jump mid-transition.
+        onTap: () => Navigator.of(context).push(softRoute(MapScreen(set: s))).then((_) => library.add(s)),
         semanticLabel: '${s.title}, $ready percent ready',
         scale: 0.98,
         child: Container(
@@ -299,14 +268,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Text('${s.topics.length} topics', style: T.body(13, color: c.muted)),
               ]),
             ),
-            Text('$ready%', style: T.disp(20, color: c.ink)),
-            const SizedBox(width: 6),
-            Icon(Icons.chevron_right_rounded, color: c.muted),
+            Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text('$ready%', style: T.disp(20, color: c.ink)),
+              Text('ready', style: T.body(12, color: c.muted)),
+            ]),
+            PopupMenuButton<String>(
+              tooltip: 'More for ${s.title}',
+              icon: Icon(Icons.more_horiz_rounded, color: c.muted),
+              onSelected: (_) => _remove(s),
+              itemBuilder: (_) => const [PopupMenuItem(value: 'remove', child: Text('Remove map'))],
+            ),
           ]),
         ),
       ),
     );
   }
+
+  Widget _friendsTile(AppColors c, {double? height = 158, double titleSize = 22}) => _tile(c,
+      bg: c.acc,
+      tag: '2–12 players',
+      title: 'Play with\nfriends',
+      icon: Icons.groups_rounded,
+      height: height,
+      titleSize: titleSize,
+      onTap: () => _open(const HostSetupScreen()));
+
+  Widget _joinTile(AppColors c, {double? height = 158, double titleSize = 22}) => _tile(c,
+      bg: Pastel.lime,
+      tag: 'Got a code?',
+      title: height == null ? 'Join a room' : 'Join a\nroom',
+      icon: Icons.login_rounded,
+      height: height,
+      titleSize: titleSize,
+      onTap: () => _open(const JoinScreen()));
+
+  Widget _quickFireTile(AppColors c, PlayerStore store, {double? height = 158, double titleSize = 22}) => _tile(c,
+      bg: Pastel.sky,
+      tag: store.bestQuickFire > 0 ? 'Best ${store.bestQuickFire}' : 'Solo · 60 s',
+      title: height == null ? 'Quick Fire' : 'Quick\nFire',
+      icon: Icons.bolt_rounded,
+      height: height,
+      titleSize: titleSize,
+      onTap: () => _open(const SoloScreen()));
+
+  Widget _factTile(AppColors c, PlayerStore store) => _tile(c,
+      bg: Pastel.lav,
+      tag: store.factSeenToday ? 'Read today' : 'New today',
+      title: 'Fact of\nthe day',
+      icon: Icons.lightbulb_rounded,
+      onTap: () => _open(const FactScreen()));
 
   Widget _levelCard(AppColors c, int level, double progress, int games, int wins) => Container(
         padding: const EdgeInsets.all(20),
@@ -348,7 +358,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text('$greet, ${store.nickname}', style: T.body(17, color: c.muted)),
                         const SizedBox(height: 10),
-                        Text('Ready to outsmart your friends?', style: T.disp(56, color: c.ink)),
+                        Text('What are you learning today?', style: T.disp(56, color: c.ink)),
                       ]),
                     ),
                     const SizedBox(width: 40),
@@ -362,38 +372,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                          Expanded(
-                            child: _tile(c,
-                                bg: Pastel.pink,
-                                tag: 'Your notes',
-                                title: 'Learn anything',
-                                icon: Icons.auto_awesome_rounded,
-                                height: null,
-                                titleSize: 30,
-                                onTap: () => _open(const SnapScreen())),
-                          ),
+                          Expanded(child: _friendsTile(c, height: null, titleSize: 30)),
                           const SizedBox(height: 16),
-                          Expanded(
-                            child: _tile(c,
-                                bg: Pastel.lime,
-                                tag: 'Got a code?',
-                                title: 'Join a room',
-                                icon: Icons.login_rounded,
-                                height: null,
-                                titleSize: 30,
-                                onTap: () => _open(const JoinScreen())),
-                          ),
+                          Expanded(child: _joinTile(c, height: null, titleSize: 30)),
                           const SizedBox(height: 16),
-                          Expanded(
-                            child: _tile(c,
-                                bg: Pastel.sky,
-                                tag: store.bestQuickFire > 0 ? 'Best ${store.bestQuickFire}' : 'Solo · 60 s',
-                                title: 'Quick Fire',
-                                icon: Icons.bolt_rounded,
-                                height: null,
-                                titleSize: 30,
-                                onTap: () => _open(const SoloScreen())),
-                          ),
+                          Expanded(child: _quickFireTile(c, store, height: null, titleSize: 30)),
                         ]),
                       ),
                     ]),
@@ -433,7 +416,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text('exam duel', style: T.disp(24, color: c.ink)),
             const SizedBox(width: 40),
             // Text links only when there's room; the cards below do the same job.
-            if (MediaQuery.sizeOf(context).width >= 1180) ...[
+            if (MediaQuery.sizeOf(context).width >= 1300) ...[
               _navLink(c, 'Learn anything', () => _open(const SnapScreen())),
               _navLink(c, 'Play with friends', () => _open(const HostSetupScreen())),
               _navLink(c, 'Join a room', () => _open(const JoinScreen())),
@@ -472,22 +455,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
 
   Widget _heroWide(AppColors c, String outfit, bool motion, bool atRisk) => Pressable(
-        onTap: () => _open(const HostSetupScreen()),
-        semanticLabel: 'Play with friends: host a room',
+        onTap: () => _open(const SnapScreen()),
+        semanticLabel: 'Learn anything: turn your notes into a game',
         scale: 0.98,
         child: Container(
           padding: const EdgeInsets.all(36),
           decoration: BoxDecoration(color: c.acc, borderRadius: BorderRadius.circular(36)),
           child: Stack(children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Tag('2–12 players · live'),
+              const Tag('Notes · photos · topics'),
               const SizedBox(height: 16),
-              Text('Play with\nfriends', style: T.disp(64, color: Pastel.ink)),
+              Text('Learn\nanything', style: T.disp(64, color: Pastel.ink)),
               const SizedBox(height: 14),
               SizedBox(
                 width: 340,
                 child: Text(
-                  atRisk ? 'Streak at risk… one quick round?' : 'Host a room, share the code, and battle it out live. Phones and browsers play together.',
+                  atRisk ? 'Streak at risk… practise one topic?' : 'Type a topic or paste your notes. Eve turns them into a map you can practise alone or duel a friend on.',
                   style: T.body(17, w: FontWeight.w500, color: Pastel.ink, height: 1.35),
                 ),
               ),
@@ -497,7 +480,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: const EdgeInsets.only(left: 24, right: 6),
                 decoration: BoxDecoration(color: Pastel.ink, borderRadius: BorderRadius.circular(999)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text('Host a room', style: T.disp(18, color: Colors.white)),
+                  Text('Start learning', style: T.disp(18, color: Colors.white)),
                   const SizedBox(width: 14),
                   Container(
                     width: 44,
@@ -550,7 +533,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
 
   Widget _howItWorks(AppColors c) {
-    const steps = ['Host a room and pick categories', 'Share the 5-letter code', 'Answer fast. Fastest correct wins'];
+    const steps = ['Snap, paste or type what you are studying', 'Eve turns it into a map of topics', 'Practise solo or duel a friend on a topic'];
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(28)),

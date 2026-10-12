@@ -85,4 +85,35 @@ void main() {
     expect(lib2.maps.map((m) => m.id), [studySets.first.id]);
     expect(Mastery.values.length, 4); // keeps the import honest if mastery levels change
   });
+
+  test('removing a map returns its place so Undo can put it back, and the change is saved', () async {
+    final lib = MapLibrary();
+    await lib.load();
+    lib.add(studySets[0]);
+    lib.add(studySets[1]);
+    lib.add(studySets[2]);
+    expect(lib.remove('nope'), isNull);
+    final at = lib.remove(studySets[1].id);
+    expect(at, 1);
+    expect(lib.maps.map((m) => m.id), [studySets[2].id, studySets[0].id]);
+    final saved = MapLibrary();
+    await saved.load();
+    expect(saved.maps.length, 2);
+    lib.restore(studySets[1], at!);
+    expect(lib.maps.map((m) => m.id), [studySets[2].id, studySets[1].id, studySets[0].id]);
+  });
+
+  test('Undo cannot push the library past its limit', () {
+    final lib = MapLibrary();
+    for (var i = 0; i < MapLibrary.maxMaps; i++) {
+      lib.add(StudySet.fromJson({...studySets.first.toJson(), 'id': 'm$i'}));
+    }
+    final removed = lib.maps.first;
+    final at = lib.remove(removed.id)!;
+    lib.add(StudySet.fromJson({...studySets.first.toJson(), 'id': 'new'}));
+    lib.restore(removed, at);
+    expect(lib.maps.length, MapLibrary.maxMaps);
+    expect(lib.maps.first.id, removed.id); // put back where it was
+    expect(lib.maps.any((m) => m.id == 'm0'), isFalse); // the oldest one made room
+  });
 }

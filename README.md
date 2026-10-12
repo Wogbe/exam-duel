@@ -4,7 +4,7 @@ An AI-powered, gamified learning app for anyone learning anything, anywhere, hos
 
 ## Where the project is
 
-The new direction, **Snap → Map → Duel**, runs on sample data. In the app it opens from the **Learn anything** card on Home; the preview below opens it on its own. There is no AI or backend behind it yet; that comes after the look and feel are settled. The plan and decisions live in `docs/PROJECT.md`.
+The new direction, **Snap → Map → Duel**, runs on sample data. In the app it opens from the big **Learn anything** card at the top of Home (the party game is now two tiles below it: Play with friends and Join a room); the preview below opens it on its own. There is no AI or backend behind it yet; that comes after the look and feel are settled. The plan and decisions live in `docs/PROJECT.md`.
 
 ```bash
 flutter run -d chrome -t lib/main_preview.dart
@@ -12,7 +12,7 @@ flutter run -d chrome -t lib/main_preview.dart
 
 - **Snap:** type or paste what you're learning (photo and file are sample stubs). It has waiting, offline and error states; add `?fail=offline` or `?fail=error` to the web URL to preview them.
 - **Map:** one tile per topic (New, Shaky, Solid, Ready). Tiles, readiness and Eve's suggestion update as you practise.
-- **Your maps:** every map you build is saved on the device with its progress, and Home lists the three most recent under "Your maps" so you can pick up where you left off. (The preview entry keeps everything in memory only.)
+- **Your maps:** every map you build is saved on the device with its progress, and Home lists the three most recent under "Your maps" so you can pick up where you left off. The "…" menu on a map removes it, with Undo. (The preview entry keeps everything in memory only.)
 - **Topic → Duel or solo → Results:** two right answers move a topic up a level. "Show me where" shows the line in your material that backs the answer, and Report flags a question.
 - **Deep links on web:** `?screen=board|snap|thinking|map|topic|duel|results&set=bio|fr|drive&dark=1&motion=0`.
 

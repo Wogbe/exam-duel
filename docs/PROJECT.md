@@ -23,6 +23,11 @@ Signature feature: Snap -> Map -> Duel.
 - Lime "Show me where" box is solid lime (the 45% version was 3.9:1 in dark mode)
 - Not changed: readiness already counts up (it counts from 0 on a freshly opened map); timer label does not announce every tick (no live region)
 
+### Home ui-review (open)
+- Your maps shows only 3 with no "See all"; on web it sits below the fold; list could be a 2-3 column grid at wide widths
+- Greeting headline and the Learn anything hero say nearly the same thing on phone
+- Hero and Play with friends tile share the accent colour; Eve's gaze target is hard-coded; no empty-state hint for maps on phone
+
 ### Before real user content goes into maps (security-check, 2026-10-12)
 - Saved maps/progress are plain JSON in shared_preferences: exclude them from Android backup (`allowBackup` / data extraction rules) or move to file/DB storage
 - Map ids must be unique per generated map (UUID); maps and progress are keyed by `StudySet.id`
@@ -42,6 +47,7 @@ Signature feature: Snap -> Map -> Duel.
 - 2026-10-12 App name deferred; keep working name Exam Duel.
 - 2026-10-12 Snap -> Map -> Duel is linked into the app: a "Learn anything" card on Home (phone and wide layouts) opens Snap; the app passes the Reduce motion / dark settings to the study screens. Still sample data, in-memory progress; map nav Duels/Me show "Coming soon".
 - 2026-10-12 Saved maps + resume: maps (as JSON) and progress persist in shared_preferences (`state/library.dart`, `state/progress.dart`, loaded in main); Home shows "Your maps" (3 most recent). No delete yet; a corrupt save is skipped, not fatal.
+- 2026-10-12 Home reframed around learning: headline "What are you learning today?", Learn anything is the hero, then Your maps, then Play with friends / Join a room / Quick Fire / Fact of the day tiles; How it works describes Snap -> Map -> Duel. Maps can be removed (menu, with Undo; progress is kept). Owner to react to the preview.
 - 2026-10-12 Prototype graduated into the app's folders (screens, widgets, data, state, theme); no 'proto' names left. Preview entry is `lib/main_preview.dart`. Behaviour unchanged.
 
 ## Release gates
