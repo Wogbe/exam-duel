@@ -35,8 +35,11 @@ class DuelResult {
 
 /// Step 4: the celebration and what changed on your map.
 class ResultsScreen extends StatefulWidget {
-  const ResultsScreen({super.key, required this.set, required this.result});
+  const ResultsScreen({super.key, required this.set, required this.result, this.topic});
   final StudySet set;
+
+  /// Topic that was practised; defaults to the one Eve suggests.
+  final int? topic;
   final DuelResult result;
 
   @override
@@ -45,6 +48,20 @@ class ResultsScreen extends StatefulWidget {
 
 class _ResultsScreenState extends State<ResultsScreen> {
   int _burst = 0;
+  late final int _topic;
+  late final Mastery _from, _to;
+
+  @override
+  void initState() {
+    super.initState();
+    _topic = widget.topic ?? widget.set.duelTopic;
+    _from = progress.mastery(widget.set, _topic);
+    // Two right answers earn a level on the map, once per results screen.
+    // Applied after this frame: the map behind us listens and must not rebuild mid-build.
+    final up = r.rightCount >= 2 && _from != Mastery.ready;
+    _to = up ? Mastery.values[_from.index + 1] : _from;
+    if (up) WidgetsBinding.instance.addPostFrameCallback((_) => progress.levelUp(widget.set, _topic));
+  }
 
   DuelResult get r => widget.result;
 
@@ -60,8 +77,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
   bool get _celebrate => r.won || r.solo && r.rightCount >= 2;
 
   void _share() {
-    final tiles = widget.set.topics.take(8).map((t) => t.mastery.emoji).join();
-    showToast(context, 'Exam Duel · ${widget.set.title} $tiles ${widget.set.readiness}%');
+    final tiles = [for (var i = 0; i < widget.set.topics.length && i < 8; i++) progress.mastery(widget.set, i).emoji].join();
+    showToast(context, 'Exam Duel · ${widget.set.title} $tiles ${progress.readiness(widget.set)}%');
   }
 
   @override
@@ -69,8 +86,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
     final c = context.c;
     final motion = context.motion;
     final avg = r.seconds.isEmpty ? 0.0 : r.seconds.reduce((a, b) => a + b) / r.seconds.length;
-    final upgraded = r.rightCount >= 2;
-    final focus = widget.set.focus;
+    final focus = widget.set.topics[_topic];
 
     return Scaffold(
       body: Stack(children: [
@@ -147,8 +163,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
                       height: 78,
                       child: _FlipTile(
                         emoji: focus.emoji,
-                        from: focus.mastery,
-                        to: upgraded ? Mastery.solid : focus.mastery,
+                        from: _from,
+                        to: _to,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -157,9 +173,11 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         Text('YOUR MAP', style: mono(color: c.muted)),
                         const SizedBox(height: 4),
                         Text(
-                          upgraded
-                              ? '${focus.name} moved up: Shaky → Solid'
-                              : '${focus.name} is still shaky. Eve will bring it back tomorrow.',
+                          _to != _from
+                              ? '${focus.name} moved up: ${_from.label} → ${_to.label}'
+                              : (_from == Mastery.ready
+                                  ? '${focus.name} is Ready. Nice upkeep!'
+                                  : '${focus.name} is still ${_from.label}. Eve will bring it back tomorrow.'),
                           style: T.body(15.5, w: FontWeight.w700, color: c.ink),
                         ),
                       ]),
@@ -173,7 +191,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 child: Column(children: [
                   GoButton(
                     label: r.solo ? 'Go again' : 'Rematch',
-                    onTap: () => Navigator.of(context).pushReplacement(softRoute(DuelScreen(set: widget.set, solo: r.solo))),
+                    onTap: () => Navigator.of(context).pushReplacement(softRoute(DuelScreen(set: widget.set, topic: _topic, solo: r.solo))),
                   ),
                   const SizedBox(height: 10),
                   Row(children: [

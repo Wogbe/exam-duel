@@ -10,9 +10,12 @@ import 'results_screen.dart';
 
 /// Step 3: the duel. Answer, see Eve's explanation and where it came from.
 class DuelScreen extends StatefulWidget {
-  const DuelScreen({super.key, required this.set, this.solo = false, this.autoPick});
+  const DuelScreen({super.key, required this.set, this.topic, this.solo = false, this.autoPick});
   final StudySet set;
   final bool solo;
+
+  /// Topic being practised; defaults to the one Eve suggests.
+  final int? topic;
 
   /// Answers the first question by itself (used by the ?pick= preview link).
   final int? autoPick;
@@ -74,7 +77,7 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
   void _next() {
     if (_qi == _qs.length - 1) {
       final result = DuelResult(correct: _correct, mine: _mine, friend: _friend, seconds: _secs, solo: widget.solo);
-      Navigator.of(context).pushReplacement(softRoute(ResultsScreen(set: widget.set, result: result)));
+      Navigator.of(context).pushReplacement(softRoute(ResultsScreen(set: widget.set, topic: widget.topic, result: result)));
       return;
     }
     setState(() {
@@ -138,7 +141,7 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
               const SizedBox(height: 14),
               _players(context),
               const SizedBox(height: 14),
-              Text('${widget.set.title} · ${widget.set.focus.name}'.toUpperCase(), style: mono(color: c.muted)),
+              Text('${widget.set.title} · ${widget.set.topics[widget.topic ?? widget.set.duelTopic].name}'.toUpperCase(), style: mono(color: c.muted)),
               const SizedBox(height: 8),
               AnimatedSwitcher(
                 duration: Duration(milliseconds: context.motion ? 380 : 0),

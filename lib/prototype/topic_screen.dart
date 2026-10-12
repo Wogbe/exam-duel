@@ -21,7 +21,8 @@ class TopicScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final t = set.topics[_i];
-    final pct = const [0, 35, 70, 100][t.mastery.index];
+    final mastery = progress.mastery(set, _i);
+    final pct = const [0, 35, 70, 100][mastery.index];
     final hasDuel = _i == set.duelTopic;
     final q = set.questions.first;
 
@@ -45,18 +46,18 @@ class TopicScreen extends StatelessWidget {
                   height: 200,
                   padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
-                    color: t.mastery.fill(c),
+                    color: mastery.fill(c),
                     borderRadius: BorderRadius.circular(30),
-                    border: t.mastery == Mastery.unseen ? Border.all(color: c.line, width: 1.5) : null,
+                    border: mastery == Mastery.unseen ? Border.all(color: c.line, width: 1.5) : null,
                   ),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(t.emoji, style: const TextStyle(fontSize: 44)),
                       const Spacer(),
-                      ProtoPill(t.mastery.label, bg: Colors.white.withValues(alpha: 0.75)),
+                      ProtoPill(mastery.label, bg: Colors.white.withValues(alpha: 0.75)),
                     ]),
                     const Spacer(),
-                    Text(t.name, style: T.disp(36, color: t.mastery.ink(c))),
+                    Text(t.name, style: T.disp(36, color: mastery.ink(c))),
                   ]),
                 ),
               ),
@@ -70,7 +71,7 @@ class TopicScreen extends StatelessWidget {
                 Expanded(
                   child: _Stat(
                     label: 'Last try',
-                    child: Text(t.mastery == Mastery.unseen ? '–' : '${t.mastery.pips - 1}/3', style: T.num(40, color: c.ink)),
+                    child: Text(mastery == Mastery.unseen ? '–' : '${mastery.pips - 1}/3', style: T.num(40, color: c.ink)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -102,14 +103,14 @@ class TopicScreen extends StatelessWidget {
                   label: 'Challenge a friend',
                   doneLabel: '$friendName joined!',
                   icon: Icons.bolt_rounded,
-                  onDone: () => Navigator.of(context).pushReplacement(softRoute(DuelScreen(set: set))),
+                  onDone: () => Navigator.of(context).pushReplacement(softRoute(DuelScreen(set: set, topic: _i))),
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,
                   child: GhostButton(
                     label: 'Practise solo',
-                    onTap: () => Navigator.of(context).pushReplacement(softRoute(DuelScreen(set: set, solo: true))),
+                    onTap: () => Navigator.of(context).pushReplacement(softRoute(DuelScreen(set: set, topic: _i, solo: true))),
                   ),
                 ),
                 if (!hasDuel) ...[

@@ -25,7 +25,12 @@ class MapScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final focus = set.focus;
+    return ListenableBuilder(listenable: progress, builder: (context, _) => _page(context, c));
+  }
+
+  Widget _page(BuildContext context, AppColors c) {
+    final suggested = progress.suggest(set);
+    final readiness = progress.readiness(set);
     return Scaffold(
       body: PageBody(
         maxWidth: 520,
@@ -74,11 +79,11 @@ class MapScreen extends StatelessWidget {
                           Text('${set.topics.length} TOPICS', style: mono(color: Pastel.ink)),
                         ]),
                         const Spacer(),
-                        DotNumber(value: set.readiness, semanticLabel: '${set.readiness} percent ready'),
+                        DotNumber(value: readiness, semanticLabel: '$readiness percent ready'),
                         const SizedBox(height: 8),
-                        Text('+${set.delta} since yesterday', style: T.body(14, w: FontWeight.w700, color: Pastel.ink)),
+                        Text('+${progress.delta(set)} since yesterday', style: T.body(14, w: FontWeight.w700, color: Pastel.ink)),
                         const SizedBox(height: 4),
-                        Ruler(value: set.readiness / 100),
+                        Ruler(value: readiness / 100),
                       ]),
                     ),
                   ),
@@ -88,15 +93,19 @@ class MapScreen extends StatelessWidget {
               FadeRise(
                 delay: const Duration(milliseconds: 160),
                 child: Pressable(
-                  onTap: () => _openTopic(context, set.duelTopic),
-                  semanticLabel: '${focus.name} is shaky. Challenge a friend on it.',
+                  onTap: suggested == null ? null : () => _openTopic(context, suggested),
+                  semanticLabel: suggested == null
+                      ? 'Nothing is shaky right now.'
+                      : '${set.topics[suggested].name} is shaky. Challenge a friend on it.',
                   child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
                     Eve(mood: EveMood.happy, size: 70, iris: c.iris, motion: context.motion),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 18),
-                        child: Bubble('${focus.name} is shaky. Challenge a friend on it? ⚔️'),
+                        child: Bubble(suggested == null
+                            ? 'Nothing is shaky right now. Nice work!'
+                            : '${set.topics[suggested].name} is shaky. Challenge a friend on it? ⚔️'),
                       ),
                     ),
                   ]),
@@ -142,8 +151,8 @@ class MapScreen extends StatelessWidget {
                         child: MasteryTile(
                           name: t.name,
                           emoji: t.emoji,
-                          mastery: t.mastery,
-                          hint: i == set.duelTopic,
+                          mastery: progress.mastery(set, i),
+                          hint: i == suggested,
                           onTap: () => _openTopic(context, i),
                         ),
                       ),
