@@ -21,6 +21,12 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Analyze and test
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+
       - name: Build APK
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -28,9 +34,6 @@ jobs:
         run: |
           chmod +x tool/build_android.sh
           ./tool/build_android.sh
-
-      - name: Run tests
-        run: flutter test
 
       - uses: actions/upload-artifact@v4
         with:

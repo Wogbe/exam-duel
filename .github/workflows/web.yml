@@ -25,6 +25,12 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Analyze and test
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+
       - name: Build web app
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

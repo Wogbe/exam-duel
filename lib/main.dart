@@ -14,7 +14,7 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   if (AppConfig.onlineEnabled) {
-    await Supabase.initialize(url: AppConfig.supabaseUrl, anonKey: AppConfig.supabaseAnonKey);
+    await Supabase.initialize(url: AppConfig.supabaseUrl, publishableKey: AppConfig.supabaseAnonKey);
   }
   final bank = await LocalBank.load();
   final store = await PlayerStore.load();

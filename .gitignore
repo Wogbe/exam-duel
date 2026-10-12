@@ -34,3 +34,6 @@ key.properties
 
 # Personal Claude Code settings
 .claude/settings.local.json
+
+# Node test dependencies
+node_modules/

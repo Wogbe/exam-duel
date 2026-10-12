@@ -175,7 +175,8 @@ supabase/
   seed.sql                    generated question bank
   functions/generate-questions/index.ts
 tool/build_seed.mjs
-test/                         streak/wardrobe tests, Snap states, map progress, keyboard and contrast
+supabase/tests/               SQL rules tests (PGlite)
+test/                         streak/wardrobe, Snap states, map progress, room controller, keyboard and contrast
 ```
 
 ## Adding content
@@ -196,7 +197,10 @@ test/                         streak/wardrobe tests, Snap states, map progress, 
   - rematch, AI batch ordering, host hand-off and room cleanup.
 - The Flutter code now runs: `flutter analyze` reports 3 info-level notices and `flutter test` passes.
 - The preview has widget tests for Snap's error states, map progress (including a tile → solo practice → results → map flow), keyboard use of buttons, and timer contrast.
-- Not tried yet: a real device, and the online rooms against a live Supabase project.
+- The room controller has unit tests against a fake repository (timers, reveal and advance, answers, rematch, removal).
+- `supabase/tests/` runs the migration on an in-memory Postgres (PGlite) and checks the game rules: joining and limits, host-only actions, hidden answers, scoring and streaks, early and timeout reveal, host hand-off and cleanup. Run `cd supabase/tests && npm install && npm test`.
+- CI runs `flutter analyze` and `flutter test` before each build, and the SQL tests in their own workflow.
+- Not tried yet: a real device, and the online rooms against a live Supabase project (PGlite is not a full Supabase, so Realtime and the edge function are untested).
 
 ## Ideas for next
 

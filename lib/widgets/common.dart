@@ -597,7 +597,7 @@ void showToast(BuildContext context, String message) {
 }
 
 /// Page transition: fade + slight rise, like `.screen` in the design.
-Route<T> softRoute<T>(Widget page) => PageRouteBuilder<T>(
+Route<R> softRoute<R>(Widget page) => PageRouteBuilder<R>(
       transitionDuration: const Duration(milliseconds: 320),
       reverseTransitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (_, __, ___) => page,
