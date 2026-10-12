@@ -35,6 +35,7 @@ Signature feature: Snap -> Map -> Duel.
 
 - 2026-10-12 Owner approves the prototype look as is; UI tweaks later when they are not satisfied.
 - 2026-10-12 App name deferred; keep working name Exam Duel.
+- 2026-10-12 Snap -> Map -> Duel is linked into the app: a "Learn anything" card on Home (phone and wide layouts) opens Snap; the app passes the Reduce motion / dark settings to the study screens. Still sample data, in-memory progress; map nav Duels/Me show "Coming soon".
 - 2026-10-12 Prototype graduated into the app's folders (screens, widgets, data, state, theme); no 'proto' names left. Preview entry is `lib/main_preview.dart`. Behaviour unchanged.
 
 ## Release gates

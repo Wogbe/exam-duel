@@ -181,7 +181,7 @@ class MapScreen extends StatelessWidget {
                   if (i == 2) {
                     Navigator.of(context).push(softRoute(const SnapScreen()));
                   } else if (i != 0) {
-                    showToast(context, 'Not in this preview yet');
+                    showToast(context, 'Coming soon');
                   }
                 },
               ),

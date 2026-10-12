@@ -12,6 +12,7 @@ import 'fact_screen.dart';
 import 'host_setup_screen.dart';
 import 'join_screen.dart';
 import 'profile_screen.dart';
+import 'snap_screen.dart';
 import 'solo_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -106,6 +107,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               WeekStrip(activeDays: store.activeDays),
               const SizedBox(height: 46),
               _hero(c, store.outfit, motion, atRisk),
+              const SizedBox(height: 12),
+              _tile(c,
+                  bg: Pastel.pink,
+                  tag: 'Your notes',
+                  title: 'Learn anything',
+                  icon: Icons.auto_awesome_rounded,
+                  height: 120,
+                  onTap: () => _open(const SnapScreen())),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(
@@ -300,6 +309,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                           Expanded(
                             child: _tile(c,
+                                bg: Pastel.pink,
+                                tag: 'Your notes',
+                                title: 'Learn anything',
+                                icon: Icons.auto_awesome_rounded,
+                                height: null,
+                                titleSize: 30,
+                                onTap: () => _open(const SnapScreen())),
+                          ),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: _tile(c,
                                 bg: Pastel.lime,
                                 tag: 'Got a code?',
                                 title: 'Join a room',
@@ -358,6 +378,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(width: 40),
             // Text links only when there's room; the cards below do the same job.
             if (MediaQuery.sizeOf(context).width >= 1180) ...[
+              _navLink(c, 'Learn anything', () => _open(const SnapScreen())),
               _navLink(c, 'Play with friends', () => _open(const HostSetupScreen())),
               _navLink(c, 'Join a room', () => _open(const JoinScreen())),
               _navLink(c, 'Quick Fire', () => _open(const SoloScreen())),

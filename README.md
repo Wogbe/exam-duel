@@ -4,7 +4,7 @@ An AI-powered, gamified learning app for anyone learning anything, anywhere, hos
 
 ## Where the project is
 
-The new direction, **Snap → Map → Duel**, is built as a UI preview that runs on sample data. There is no AI or backend behind it yet; that comes after the look and feel are settled. The plan and decisions live in `docs/PROJECT.md`.
+The new direction, **Snap → Map → Duel**, runs on sample data. In the app it opens from the **Learn anything** card on Home; the preview below opens it on its own. There is no AI or backend behind it yet; that comes after the look and feel are settled. The plan and decisions live in `docs/PROJECT.md`.
 
 ```bash
 flutter run -d chrome -t lib/main_preview.dart

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/splash_screen.dart';
 import 'state/providers.dart';
 import 'theme/app_theme.dart';
+import 'widgets/view_settings.dart';
 
 class ExamDuelApp extends ConsumerWidget {
   const ExamDuelApp({super.key});
@@ -18,6 +19,14 @@ class ExamDuelApp extends ConsumerWidget {
       darkTheme: buildTheme(dark: true, accent: store.accent),
       themeMode: store.dark ? ThemeMode.dark : ThemeMode.light,
       themeAnimationDuration: const Duration(milliseconds: 300),
+      // The study screens read motion and dark mode from here, so they follow the Settings switches.
+      builder: (context, child) => ViewSettings(
+        motionOn: !store.reduceMotion,
+        dark: store.dark,
+        toggleMotion: () => store.setReduceMotion(!store.reduceMotion),
+        toggleDark: () => store.setDark(!store.dark),
+        child: child!,
+      ),
       home: const SplashScreen(),
     );
   }
