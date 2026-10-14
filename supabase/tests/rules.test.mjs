@@ -7,6 +7,7 @@ import { PGlite } from '@electric-sql/pglite';
 
 const migration = readFileSync(new URL('../migrations/20261009000000_init.sql', import.meta.url), 'utf8');
 const v2 = readFileSync(new URL('../migrations/20261014000000_variety_photos.sql', import.meta.url), 'utf8');
+const v3 = readFileSync(new URL('../migrations/20261014120000_unique_names.sql', import.meta.url), 'utf8');
 const [A, B, C] = ['aaaaaaaa-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000002', 'cccccccc-0000-0000-0000-000000000003'];
 
 const db = new PGlite();
@@ -50,6 +51,8 @@ before(async () => {
   // v2 needs no stubs: missing http/pg_cron extensions are skipped with a notice.
   await db.exec(v2);
   await db.exec(v2); // and it is safe to run twice
+  await db.exec(v3);
+  await db.exec(v3);
   for (let i = 0; i < 6; i++) {
     await db.query(
       "insert into public.questions (category, stem, options, correct_index) values ($1, $2, $3::jsonb, 1)",
@@ -319,5 +322,66 @@ describe('v2: room photos', () => {
     assert.equal(still.photo, 'aGVsbG8=');
     await rpc(A, 'set_room_photo', [room.id, '']);
     assert.equal((await db.query('select * from public.room_player_photos where room_id = $1', [room.id])).rows.length, 0);
+  });
+});
+
+describe('v2.1: telling players apart', () => {
+  const seat = async (room, uid) =>
+    (await db.query('select nickname, avatar from public.room_players where room_id = $1 and user_id = $2', [room, uid])).rows[0];
+
+  test('duplicate names are numbered, and reconnecting keeps your number', async () => {
+    const room = await rpc(A, 'create_room', ['Kofi', 0, '{}']);
+    await rpc(B, 'join_room', [room.code, 'Kofi', 0]);
+    await rpc(C, 'join_room', [room.code, 'kofi', 0]); // case-insensitive
+    assert.equal((await seat(room.id, A)).nickname, 'Kofi');
+    assert.equal((await seat(room.id, B)).nickname, 'Kofi 2');
+    assert.equal((await seat(room.id, C)).nickname, 'kofi 3');
+
+    // Reconnecting sends the same local nickname and must not bump the number.
+    await rpc(B, 'join_room', [room.code, 'Kofi', 0]);
+    await rpc(B, 'join_room', [room.code, 'Kofi', 0]);
+    assert.equal((await seat(room.id, B)).nickname, 'Kofi 2');
+
+    // A different name on reconnect is taken as-is when it is free.
+    await rpc(B, 'join_room', [room.code, 'Ama', 0]);
+    assert.equal((await seat(room.id, B)).nickname, 'Ama');
+  });
+
+  test('a numbered name still fits the 20-character column', async () => {
+    const room = await rpc(A, 'create_room', ['12345678901234567890', 0, '{}']);
+    await rpc(B, 'join_room', [room.code, '12345678901234567890', 0]);
+    const b = (await seat(room.id, B)).nickname;
+    assert.ok(b.length <= 20, `"${b}" is ${b.length} characters`);
+    assert.ok(b.endsWith(' 2'), b);
+  });
+
+  test('an empty nickname becomes Player, and the next one Player 2', async () => {
+    const room = await rpc(A, 'create_room', ['Ama', 0, '{}']);
+    await rpc(B, 'join_room', [room.code, '   ', 0]);
+    await rpc(C, 'join_room', [room.code, '', 0]);
+    assert.equal((await seat(room.id, B)).nickname, 'Player');
+    assert.equal((await seat(room.id, C)).nickname, 'Player 2');
+  });
+
+  test('the first 8 players all get different colours, and rejoining keeps yours', async () => {
+    const room = await rpc(A, 'create_room', ['Host', 3, '{}']);
+    const ids = [];
+    for (let i = 0; i < 11; i++) {
+      const id = `eeeeeeee-0000-0000-0000-${String(i).padStart(12, '0')}`;
+      ids.push(id);
+      await rpc(id, 'join_room', [room.code, `P${i}`, 3]); // everyone asks for colour 3
+    }
+    const colours = (await db.query('select avatar from public.room_players where room_id = $1 order by joined_at', [room.id])).rows.map((r) => r.avatar);
+    assert.equal(colours.length, 12);
+    assert.equal(new Set(colours.slice(0, 8)).size, 8, `first 8 clash: ${colours}`);
+    assert.ok(colours.every((c) => c >= 0 && c <= 7));
+    const before = (await seat(room.id, ids[0])).avatar;
+    await rpc(ids[0], 'join_room', [room.code, 'P0', before]);
+    assert.equal((await seat(room.id, ids[0])).avatar, before);
+  });
+
+  test('clients cannot call the helpers', async () => {
+    await assert.rejects(as(A, "select public._unique_nickname(gen_random_uuid(), 'x'::text, null::uuid)"), /permission denied/);
+    await assert.rejects(as(A, 'select public._free_avatar(gen_random_uuid(), 0, null::uuid)'), /permission denied/);
   });
 });

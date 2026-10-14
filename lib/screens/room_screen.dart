@@ -34,6 +34,7 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
   int _lastIdx = -1;
   bool _wasRevealed = false;
   int _lastSecond = -1;
+  bool _toldAboutName = false;
 
   @override
   void initState() {
@@ -57,6 +58,7 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
       Navigator.of(context).popUntil((r) => r.isFirst);
       return;
     }
+    _checkMyName(store);
     final r = ctrl.room;
     // Haptics on phase changes.
     if (r.status != _lastStatus || r.currentIndex != _lastIdx) {
@@ -97,6 +99,18 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
     }
     _lastStatus = r.status;
     _lastIdx = r.currentIndex;
+  }
+
+  /// Someone in this room already had our nickname, so the server gave us a
+  /// numbered one. Say so once, or the player wonders who "Kofi 2" is.
+  void _checkMyName(PlayerStore store) {
+    if (_toldAboutName || !mounted) return;
+    final me = ctrl.mePlayer;
+    if (me == null) return;
+    _toldAboutName = true;
+    final mine = store.nickname.trim();
+    if (me.nickname == mine || mine.isEmpty) return;
+    showToast(context, 'Someone here is already $mine, so you are ${me.nickname} in this room.');
   }
 
   void _grantRewards(PlayerStore store) {

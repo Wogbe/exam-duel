@@ -1,7 +1,7 @@
 name: exam_duel
 description: Exam Duel — a party trivia game for friends, hosted by Eve the owl.
 publish_to: 'none'
-version: 0.2.0+2
+version: 0.2.1+3
 
 environment:
   sdk: '>=3.6.0 <4.0.0'
