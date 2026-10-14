@@ -1,4 +1,4 @@
-// Runs the migration on an in-memory Postgres (PGlite) with stubs for Supabase's auth and
+// Runs the migrations on an in-memory Postgres (PGlite) with stubs for Supabase's auth and
 // realtime pieces, then checks the game rules. Run: cd supabase/tests && npm install && npm test
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -6,6 +6,7 @@ import { before, describe, test } from 'node:test';
 import { PGlite } from '@electric-sql/pglite';
 
 const migration = readFileSync(new URL('../migrations/20261009000000_init.sql', import.meta.url), 'utf8');
+const v2 = readFileSync(new URL('../migrations/20261014000000_variety_photos.sql', import.meta.url), 'utf8');
 const [A, B, C] = ['aaaaaaaa-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000002', 'cccccccc-0000-0000-0000-000000000003'];
 
 const db = new PGlite();
@@ -46,6 +47,9 @@ before(async () => {
   `);
   // PGlite has no pgcrypto, and the migration only needs gen_random_uuid(), which core Postgres has.
   await db.exec(migration.replace('create extension if not exists pgcrypto;', ''));
+  // v2 needs no stubs: missing http/pg_cron extensions are skipped with a notice.
+  await db.exec(v2);
+  await db.exec(v2); // and it is safe to run twice
   for (let i = 0; i < 6; i++) {
     await db.query(
       "insert into public.questions (category, stem, options, correct_index) values ($1, $2, $3::jsonb, 1)",
@@ -205,5 +209,115 @@ describe('cleanup', () => {
     await assert.rejects(rpc(A, 'cleanup_rooms'), /permission denied/);
     const removed = (await db.query('select public.cleanup_rooms() as n')).rows[0].n;
     assert.ok(removed >= 1);
+  });
+});
+
+describe('v2: question variety', () => {
+  test('a rematch gets questions the players have not had yet', async () => {
+    for (let i = 0; i < 6; i++) {
+      await db.query(
+        "insert into public.questions (category, stem, options, correct_index) values ('sports', $1, $2::jsonb, 0)",
+        [`S${i}`, JSON.stringify(['a', 'b', 'c', 'd'])],
+      );
+    }
+    const room = await newRoom({ count: 3, seconds: 15, categories: ['sports'] });
+    const ids = async () => (await db.query('select question_id from public.room_question_keys where room_id = $1', [room.id])).rows.map((r) => r.question_id);
+    await rpc(A, 'start_game', [room.id]);
+    const first = new Set(await ids());
+    await db.query("update public.rooms set status = 'finished' where id = $1", [room.id]);
+    await rpc(A, 'start_game', [room.id]);
+    const second = await ids();
+    assert.equal(first.size, 3);
+    assert.ok(second.every((id) => !first.has(id)), 'second game repeats a question while unseen ones are left');
+    await db.query("update public.rooms set status = 'finished' where id = $1", [room.id]);
+    await rpc(A, 'start_game', [room.id]);
+    const third = await ids();
+    assert.ok(third.every((id) => first.has(id)), 'after all 6, the oldest-seen come back first');
+    const seen = (await db.query('select count(*)::int as n from public.user_seen_questions where user_id = $1', [B])).rows[0].n;
+    assert.ok(seen >= 6, 'picks are remembered per player');
+    assert.equal((await as(B, 'select * from public.user_seen_questions')).length, 0, 'seen history is private');
+  });
+
+  test('when everything has been seen, games still start', async () => {
+    const room = await newRoom({ count: 3, seconds: 15, categories: ['history'] });
+    for (let i = 0; i < 4; i++) {
+      const r = await rpc(A, 'start_game', [room.id]);
+      assert.equal(r.question_count, 3);
+      await db.query("update public.rooms set status = 'finished' where id = $1", [room.id]);
+    }
+  });
+
+  test('practice_questions works signed out, filters, excludes and caps', async () => {
+    const all = await rpc(null, 'practice_questions', [100, [], []]);
+    assert.ok(all.length > 0 && all.length <= 50);
+    const q = all[0];
+    assert.ok(q.id && q.q && q.a && q.w.length === 3 && !q.w.includes(q.a));
+    const sci = await rpc(null, 'practice_questions', [50, ['science'], []]);
+    assert.ok(sci.every((x) => x.c === 'science'));
+    const left = await rpc(null, 'practice_questions', [50, ['science'], sci.map((x) => x.id)]);
+    assert.equal(left.length, 0, 'excluded ids are skipped');
+  });
+
+  test('the importer is not callable by clients and fails quietly without the http extension', async () => {
+    await assert.rejects(as(A, 'select public.import_opentdb()'), /permission denied/);
+    const n = (await db.query('select public.import_opentdb() as n')).rows[0].n;
+    assert.equal(n, 0);
+  });
+});
+
+describe('v2: OpenTDB import (with a fake http extension)', () => {
+  test('decodes base64, maps the category, shuffles the answer in and skips duplicates and bad rows', async () => {
+    const b64 = (t) => Buffer.from(t, 'utf8').toString('base64');
+    const item = (q, a, w) => ({ question: b64(q), correct_answer: b64(a), incorrect_answers: w.map(b64) });
+    const body = {
+      response_code: 0,
+      results: [
+        item('What is the capital of Peru?', 'Lima', ['Quito', 'Bogotá', 'La Paz']),
+        item('Which element has the symbol "O"?', 'Oxygen', ['Gold', 'Osmium', 'Iron']),
+        item('What is the capital of Peru?', 'Lima', ['Quito', 'Bogotá', 'La Paz']), // duplicate
+        item('Too few wrong answers?', 'Yes', ['No']), // skipped
+      ],
+    };
+    await db.exec(`
+      create schema if not exists extensions;
+      create type extensions.http_response as (status int, content text);
+      create function extensions.http_set_curlopt(text, text) returns boolean language sql as $$ select true $$;
+      create function extensions.http_get(uri text) returns extensions.http_response language sql as
+        $f$ select (200, ${"'" + JSON.stringify(body).replaceAll("'", "''") + "'"})::extensions.http_response $f$;
+    `);
+    const n = (await db.query('select public.import_opentdb(22) as n')).rows[0].n;
+    assert.equal(n, 2);
+    const rows = (await db.query("select category, stem, options, correct_index from public.questions where source = 'opentdb' order by stem")).rows;
+    assert.equal(rows.length, 2);
+    assert.ok(rows.every((r) => r.category === 'geography'));
+    const peru = rows.find((r) => r.stem.includes('Peru'));
+    assert.equal(peru.options.length, 4);
+    assert.equal(peru.options[peru.correct_index], 'Lima');
+    assert.ok(peru.options.includes('Bogotá'), 'UTF-8 survives');
+    assert.equal((await db.query('select public.import_opentdb(22) as n')).rows[0].n, 0, 'second run adds no duplicates');
+    const practice = await rpc(null, 'practice_questions', [50, ['geography'], []]);
+    assert.ok(practice.some((x) => x.q.includes('Peru') && x.a === 'Lima'), 'imported questions reach solo play');
+    await db.exec('drop schema extensions cascade');
+  });
+});
+
+describe('v2: room photos', () => {
+  test('members set and read photos; outsiders cannot', async () => {
+    const room = await newRoom();
+    await assert.rejects(rpc(C, 'set_room_photo', [room.id, 'aGVsbG8=']), /not in this room/);
+    await assert.rejects(rpc(A, 'set_room_photo', [room.id, 'not base64!']), /not an image/);
+    await assert.rejects(rpc(A, 'set_room_photo', [room.id, 'A'.repeat(300001)]), /too large/);
+    await rpc(A, 'set_room_photo', [room.id, 'aGVsbG8=']);
+    const [p] = await as(B, 'select photo from public.room_player_photos where room_id = $1', [room.id]);
+    assert.equal(p.photo, 'aGVsbG8=');
+    const [flag] = await as(B, 'select has_photo from public.room_players where room_id = $1 and user_id = $2', [room.id, A]);
+    assert.equal(flag.has_photo, true);
+    assert.equal((await as(C, 'select * from public.room_player_photos where room_id = $1', [room.id])).length, 0);
+    // Clients can't write photos directly: it errors or matches no rows.
+    await as(B, "update public.room_player_photos set photo = 'eA=='").catch(() => {});
+    const [still] = (await db.query('select photo from public.room_player_photos where room_id = $1', [room.id])).rows;
+    assert.equal(still.photo, 'aGVsbG8=');
+    await rpc(A, 'set_room_photo', [room.id, '']);
+    assert.equal((await db.query('select * from public.room_player_photos where room_id = $1', [room.id])).rows.length, 0);
   });
 });

@@ -3,21 +3,25 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../services/fx.dart';
 import '../theme/app_theme.dart';
 
 /// Light haptic tick, respecting the user's setting.
 void tick(bool enabled, {bool heavy = false}) {
-  if (!enabled) return;
+  if (!enabled || !Fx.haptics) return;
   heavy ? HapticFeedback.mediumImpact() : HapticFeedback.selectionClick();
 }
 
 /// Springy press: shrinks on touch, bounces back with overshoot.
 class Pressable extends StatefulWidget {
-  const Pressable({super.key, required this.child, this.onTap, this.scale = 0.94, this.semanticLabel});
+  const Pressable({super.key, required this.child, this.onTap, this.scale = 0.94, this.semanticLabel, this.sound = true});
   final Widget child;
   final VoidCallback? onTap;
   final double scale;
   final String? semanticLabel;
+
+  /// Plays the soft tap sound. Off for buttons that play their own sound.
+  final bool sound;
 
   @override
   State<Pressable> createState() => _PressableState();
@@ -27,6 +31,13 @@ class _PressableState extends State<Pressable> {
   bool _down = false;
   bool _hover = false;
   bool _focus = false;
+
+  void _fire() {
+    final f = widget.onTap;
+    if (f == null) return;
+    if (widget.sound) Fx.play(Sfx.tap);
+    f();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +51,7 @@ class _PressableState extends State<Pressable> {
       child: FocusableActionDetector(
         enabled: enabled,
         onShowFocusHighlight: (v) => setState(() => _focus = v),
-        actions: {ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: (_) => widget.onTap?.call())},
+        actions: {ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: (_) => _fire())},
         child: MouseRegion(
         cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
         onEnter: (_) => setState(() => _hover = true),
@@ -52,7 +63,7 @@ class _PressableState extends State<Pressable> {
         onTapUp: enabled
             ? (_) {
                 setState(() => _down = false);
-                widget.onTap!();
+                _fire();
               }
             : null,
         child: AnimatedScale(
@@ -259,28 +270,57 @@ class Bubble extends StatelessWidget {
   }
 }
 
-/// Player avatar: pastel circle with an initial.
+/// Room players' photos by user id, so any [Avatar] below can find one.
+class PlayerPhotos extends InheritedWidget {
+  const PlayerPhotos({super.key, required this.photos, required super.child});
+  final Map<String, Uint8List> photos;
+
+  static Uint8List? of(BuildContext context, String userId) =>
+      context.dependOnInheritedWidgetOfExactType<PlayerPhotos>()?.photos[userId];
+
+  @override
+  bool updateShouldNotify(PlayerPhotos old) => !identical(old.photos, photos);
+}
+
+/// Player avatar: their photo if they added one, else a pastel circle
+/// with an initial. Pass [photo] for the local player, or [userId] inside
+/// a [PlayerPhotos] for room players.
 class Avatar extends StatelessWidget {
-  const Avatar({super.key, required this.initial, required this.index, this.size = 40, this.ring});
+  const Avatar({super.key, required this.initial, required this.index, this.size = 40, this.ring, this.photo, this.userId});
   final String initial;
   final int index;
   final double size;
   final Color? ring;
+  final Uint8List? photo;
+  final String? userId;
 
   static Color colorFor(int i) => Pastel.all[i % Pastel.all.length];
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: colorFor(index),
-          shape: BoxShape.circle,
-          border: ring == null ? null : Border.all(color: ring!, width: 2.5),
-        ),
-        child: Text(initial, style: T.disp(size * 0.42, color: Pastel.ink)),
-      );
+  Widget build(BuildContext context) {
+    final img = photo ?? (userId == null ? null : PlayerPhotos.of(context, userId!));
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(color: colorFor(index), shape: BoxShape.circle),
+      // In front, so a photo never hides the "this is you" ring.
+      foregroundDecoration:
+          ring == null ? null : BoxDecoration(shape: BoxShape.circle, border: Border.all(color: ring!, width: 2.5)),
+      child: img == null
+          ? Text(initial, style: T.disp(size * 0.42, color: Pastel.ink))
+          : Image.memory(
+              img,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              excludeFromSemantics: true,
+              errorBuilder: (_, __, ___) => Text(initial, style: T.disp(size * 0.42, color: Pastel.ink)),
+            ),
+    );
+  }
 }
 
 /// Progress bar; `striped` paints the game's pastel colour stripe.

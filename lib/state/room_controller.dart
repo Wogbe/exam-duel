@@ -26,6 +26,10 @@ class RoomController extends ChangeNotifier {
   String? error;
   bool closed = false; // room deleted or we left
 
+  /// Players' profile photos by user id (only those who added one).
+  Map<String, Uint8List> photos = const {};
+  String _photoIds = '';
+
   /// Latest emote per player, cleared after a few seconds.
   final Map<String, ({String emote, DateTime at})> emotes = {};
 
@@ -132,6 +136,11 @@ class RoomController extends ChangeNotifier {
 
   void _onPlayers(List<Player> list) {
     players = list;
+    final ids = (list.map((p) => '${p.userId}:${p.hasPhoto}').toList()..sort()).join(',');
+    if (ids != _photoIds) {
+      _photoIds = ids;
+      _loadPhotos();
+    }
     if (me != null && list.isNotEmpty && !list.any((p) => p.userId == me)) {
       closed = true; // we were removed
     }
@@ -203,6 +212,19 @@ class RoomController extends ChangeNotifier {
     } catch (e) {
       _setError(e.toString());
     }
+  }
+
+  Future<void> _loadPhotos() async {
+    final p = await repo.fetchRoomPhotos(room.id);
+    if (_disposed) return;
+    photos = p;
+    notifyListeners();
+  }
+
+  /// Shares our photo with the room, then refreshes everyone's.
+  Future<void> sharePhoto(String base64Photo) async {
+    await repo.setRoomPhoto(room.id, base64Photo);
+    await _loadPhotos();
   }
 
   Future<int> addAiQuestions(String topic, int count) => repo.generateAiQuestions(room.id, topic, count);

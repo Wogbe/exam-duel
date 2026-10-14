@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/player_store.dart';
+import '../services/fx.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/badges.dart';
 import '../widgets/common.dart';
 import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
@@ -23,7 +25,13 @@ class _StreakScreenState extends ConsumerState<StreakScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => tick(ref.read(playerStoreProvider).haptics, heavy: true));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final store = ref.read(playerStoreProvider);
+      tick(store.haptics, heavy: true);
+      Fx.play(widget.event == StreakEvent.reset ? Sfx.pop : Sfx.streak);
+      announceBadges(context, store);
+    });
   }
 
   @override

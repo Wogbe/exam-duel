@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/fx.dart';
 import '../state/providers.dart';
 import '../state/room_controller.dart';
 import '../theme/app_theme.dart';
@@ -37,6 +38,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       final room = await repo.joinRoom(_code.text, store.nickname, store.avatar);
       if (!mounted) return;
       tick(store.haptics, heavy: true);
+      Fx.play(Sfx.go);
       Navigator.of(context).pushReplacement(softRoute(RoomScreen(controller: RoomController(repo, room))));
     } catch (e) {
       if (!mounted) return;
@@ -44,6 +46,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
         _busy = false;
         _shake++;
       });
+      Fx.wrong();
       showToast(context, e.toString());
     }
   }

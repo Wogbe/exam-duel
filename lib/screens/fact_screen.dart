@@ -2,11 +2,14 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../data/models.dart';
 import '../data/player_store.dart';
+import '../services/fx.dart';
+import '../services/share.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/badges.dart';
 import '../widgets/common.dart';
 import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
@@ -24,8 +27,28 @@ class FactScreen extends ConsumerStatefulWidget {
 
 class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProviderStateMixin {
   late final AnimationController _flip = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
+  final _rng = math.Random();
   bool _flipped = false;
   String? _reaction;
+  String? _cheer; // Eve's line after a reaction
+  String? _float; // "+5 XP" rising from the buttons
+  int? _factIdx;
+  bool _bonus = false; // showing an extra fact, not today's
+
+  static const _knewLines = [
+    'Big brain! You knew it.',
+    'Look at you, walking encyclopedia!',
+    'Sharp! Eve is impressed.',
+    'Of course you knew. Genius move.',
+    'Nothing gets past you!',
+  ];
+  static const _blownLines = [
+    'Right?! Eve’s mind is blown too.',
+    'Now drop that one at dinner tonight.',
+    'Share it and blow someone else’s mind!',
+    'That’s why we read facts. Brain +1!',
+    'Hoo-hoo! Learned something new.',
+  ];
 
   @override
   void initState() {
@@ -34,6 +57,12 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
       _flipped = true;
       _flip.value = 1;
     }
+  }
+
+  Fact _fact() {
+    final bank = ref.read(localBankProvider);
+    _factIdx ??= ref.read(playerStoreProvider).dailyFactIndex(bank.factCount);
+    return bank.factAt(_factIdx!);
   }
 
   @override
@@ -46,6 +75,7 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
     if (_flipped) return;
     final store = ref.read(playerStoreProvider);
     tick(store.haptics);
+    Fx.play(Sfx.whoosh);
     setState(() => _flipped = true);
     if (store.reduceMotion) {
       _flip.value = 1;
@@ -59,6 +89,8 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
     await store.markFactSeen();
     final event = await store.markActive();
     if (!mounted) return;
+    await announceBadges(context, store);
+    if (!mounted) return;
     if (!widget.firstOpen) {
       Navigator.of(context).pop();
       return;
@@ -71,16 +103,50 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
     Navigator.of(context).pushReplacement(softRoute(next));
   }
 
-  void _share(String text) {
-    final msg = Uri.encodeComponent('Did you know? $text\n\n— Fact of the Day from Eve, Exam Duel');
-    launchUrl(Uri.parse('https://wa.me/?text=$msg'), mode: LaunchMode.externalApplication);
+  void _share(String text) =>
+      shareText(context, 'Did you know? $text\n\n— Fact of the Day from Eve the owl, Exam Duel. Get yours: $appLink');
+
+  Future<void> _react(String id) async {
+    final store = ref.read(playerStoreProvider);
+    final lines = id == 'knew' ? _knewLines : _blownLines;
+    setState(() {
+      _reaction = id;
+      _cheer = lines[_rng.nextInt(lines.length)];
+    });
+    final rewarded = await store.rewardFactReaction();
+    if (!mounted) return;
+    if (rewarded) {
+      Fx.reward();
+      setState(() => _float = '+5 XP');
+      showToast(context, id == 'knew' ? 'Brainy! +5 XP for today’s fact.' : 'Learning pays! +5 XP for today’s fact.');
+    } else {
+      Fx.play(Sfx.pop);
+      Fx.buzz();
+    }
+  }
+
+  /// Shows one more fact (they keep reading, Eve keeps cheering).
+  Future<void> _another() async {
+    final store = ref.read(playerStoreProvider);
+    final idx = await store.bonusFactIndex(ref.read(localBankProvider).factCount);
+    if (!mounted) return;
+    Fx.play(Sfx.whoosh);
+    setState(() {
+      _factIdx = idx;
+      _bonus = true;
+      _reaction = null;
+      _cheer = null;
+      _float = null;
+    });
+    if (!store.reduceMotion) _flip.forward(from: 0.5);
+    await announceBadges(context, store);
   }
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final store = ref.watch(playerStoreProvider);
-    final fact = ref.watch(localBankProvider).factFor(DateTime.now());
+    final fact = _fact();
     final motion = !store.reduceMotion;
     final mood = !_flipped
         ? EveMood.idle
@@ -99,7 +165,7 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
               if (!widget.firstOpen)
                 CircleIconButton(icon: Icons.arrow_back_rounded, label: 'Back', onTap: () => Navigator.of(context).pop()),
               const Spacer(),
-              Text('FACT OF THE DAY', style: T.micro(color: c.muted)),
+              Text(_bonus ? 'BONUS FACT' : 'FACT OF THE DAY', style: T.micro(color: c.muted)),
               const Spacer(),
               if (!widget.firstOpen) const SizedBox(width: 48),
             ]),
@@ -108,7 +174,9 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 18),
-                  child: Bubble(_flipped ? (_reaction == null ? 'Wait… you HAVE to see this.' : 'Told you! Share it?') : 'Tap the card. Go on.'),
+                  child: Bubble(!_flipped
+                      ? 'Tap the card. Go on.'
+                      : _cheer ?? (_bonus ? 'Ooh, here’s another one!' : 'Wait… you HAVE to see this.')),
                 ),
               ),
               Eve(size: 120, iris: c.iris, mood: mood, outfit: store.outfit, motion: motion, sparkle: _reaction == 'blown'),
@@ -147,16 +215,21 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
               child: IgnorePointer(
                 ignoring: !_flipped,
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  Row(children: [
-                    _react(c, 'knew', 'Knew it', Icons.check_rounded, Pastel.mint),
-                    const SizedBox(width: 10),
-                    _react(c, 'blown', 'Mind blown', Icons.auto_awesome_rounded, Pastel.peach),
+                  Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [
+                    Row(children: [
+                      _reactButton(c, 'knew', 'Knew it', Icons.check_rounded, Pastel.mint),
+                      const SizedBox(width: 10),
+                      _reactButton(c, 'blown', 'Mind blown', Icons.auto_awesome_rounded, Pastel.peach),
+                    ]),
+                    if (_float != null && motion) Positioned(top: -30, child: IgnorePointer(child: FloatUp(text: _float!))),
                   ]),
                   const SizedBox(height: 12),
                   Row(children: [
-                    CircleIconButton(icon: Icons.share_rounded, label: 'Share on WhatsApp', onTap: () => _share(fact.text)),
+                    CircleIconButton(icon: Icons.share_rounded, label: 'Share this fact', onTap: () => _share(fact.text)),
                     const SizedBox(width: 10),
-                    Expanded(child: GoButton(label: widget.firstOpen ? 'Keep my streak' : 'Done', onTap: _continue)),
+                    CircleIconButton(icon: Icons.casino_rounded, label: 'Another fact', onTap: _another),
+                    const SizedBox(width: 10),
+                    Expanded(child: GoButton(label: widget.firstOpen ? 'Keep streak' : 'Done', onTap: _continue)),
                   ]),
                 ]),
               ),
@@ -197,12 +270,10 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
         ]),
       );
 
-  Widget _react(AppColors c, String id, String label, IconData icon, Color bg) => Expanded(
+  Widget _reactButton(AppColors c, String id, String label, IconData icon, Color bg) => Expanded(
         child: Pressable(
-          onTap: () {
-            tick(ref.read(playerStoreProvider).haptics);
-            setState(() => _reaction = id);
-          },
+          onTap: () => _react(id),
+          sound: false,
           semanticLabel: label,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),

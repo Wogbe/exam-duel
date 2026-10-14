@@ -5,9 +5,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../data/models.dart';
 import '../data/player_store.dart';
+import '../services/fx.dart';
+import '../services/share.dart';
 import '../state/providers.dart';
 import '../state/room_controller.dart';
 import '../theme/app_theme.dart';
+import '../widgets/badges.dart';
 import '../widgets/common.dart';
 import '../widgets/eve/eve.dart';
 import '../widgets/responsive.dart';
@@ -30,11 +33,15 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
   RoomStatus? _lastStatus;
   int _lastIdx = -1;
   bool _wasRevealed = false;
+  int _lastSecond = -1;
 
   @override
   void initState() {
     super.initState();
     ctrl.addListener(_onChange);
+    final photo = ref.read(playerStoreProvider).photoBase64;
+    // Big photos stay on this phone only (the server caps photos at 300 KB of text).
+    if (photo != null && photo.length <= 300000) ctrl.sharePhoto(photo);
   }
 
   @override
@@ -53,13 +60,34 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
     final r = ctrl.room;
     // Haptics on phase changes.
     if (r.status != _lastStatus || r.currentIndex != _lastIdx) {
-      if (r.status == RoomStatus.question) tick(store.haptics);
+      if (r.status == RoomStatus.question) {
+        tick(store.haptics);
+        Fx.play(Sfx.whoosh);
+      }
       _wasRevealed = false;
+      _lastSecond = -1;
+    }
+    // Countdown ticks for the last 3 seconds, until you answer.
+    if (r.status == RoomStatus.question && ctrl.myChoice == null && ctrl.question != null) {
+      final sec = ctrl.secondsLeft;
+      if (sec != _lastSecond) {
+        _lastSecond = sec;
+        if (sec >= 1 && sec <= 3) Fx.countdown();
+      }
     }
     if (r.status == RoomStatus.reveal && ctrl.question?.answer != null && !_wasRevealed) {
       _wasRevealed = true;
-      final ok = ctrl.myResult?.correct ?? false;
-      tick(store.haptics, heavy: ok);
+      final res = ctrl.myResult;
+      if (ctrl.myChoice == null) {
+        Fx.play(Sfx.pop); // didn't answer
+      } else if (res != null && res.correct) {
+        Fx.play(res.streak >= 3 ? Sfx.streak : Sfx.correct);
+        tick(store.haptics, heavy: true);
+        store.countCorrect(ctrl.question!.category);
+        store.recordCombo(res.streak);
+      } else {
+        Fx.wrong();
+      }
     }
     if (r.status == RoomStatus.finished && _lastStatus != RoomStatus.finished) {
       // Short wait so the final scores have streamed in.
@@ -79,8 +107,12 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
     final rank = ranked.indexWhere((p) => p.userId == ctrl.me);
     final me = ctrl.mePlayer!;
     final coins = switch (rank) { 0 => 30, 1 => 20, 2 => 15, _ => 10 };
-    store.addReward(xp: (me.score / 10).round() + 20, coins: coins, game: true, win: rank == 0 && ranked.length > 1);
-    store.markActive();
+    Fx.celebrate(won: rank >= 0 && rank < 3);
+    () async {
+      await store.addReward(xp: (me.score / 10).round() + 20, coins: coins, game: true, win: rank == 0 && ranked.length > 1);
+      await store.markActive();
+      if (mounted) await announceBadges(context, store);
+    }();
   }
 
   Future<bool> _confirmLeave() async {
@@ -134,9 +166,12 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
                 RoomStatus.question || RoomStatus.reveal => _GameView(ctrl: ctrl, onLeave: _leave),
                 RoomStatus.finished => _ResultsView(ctrl: ctrl, onLeave: _leave),
               };
-              return AnimatedSwitcher(
-                duration: const Duration(milliseconds: 320),
-                child: KeyedSubtree(key: ValueKey(status == RoomStatus.reveal ? RoomStatus.question : status), child: view),
+              return PlayerPhotos(
+                photos: ctrl.photos,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 320),
+                  child: KeyedSubtree(key: ValueKey(status == RoomStatus.reveal ? RoomStatus.question : status), child: view),
+                ),
               );
             },
           ),
@@ -222,7 +257,7 @@ class _PlayerChip extends StatelessWidget {
           AnimatedOpacity(
             opacity: dim ? 0.4 : 1,
             duration: const Duration(milliseconds: 200),
-            child: Avatar(initial: player.initial, index: player.avatar, size: size, ring: isMe ? c.ink : null),
+            child: Avatar(initial: player.initial, index: player.avatar, size: size, ring: isMe ? c.ink : null, userId: player.userId),
           ),
           if (player.isHost)
             Positioned(
@@ -844,7 +879,7 @@ class _Scoreboard extends StatelessWidget {
                 decoration: BoxDecoration(color: isMe ? c.accSoft : Colors.transparent, borderRadius: BorderRadius.circular(16)),
                 child: Row(children: [
                   SizedBox(width: 22, child: Text('${i + 1}', style: T.disp(15, color: c.muted))),
-                  Avatar(initial: p.initial, index: p.avatar, size: 32),
+                  Avatar(initial: p.initial, index: p.avatar, size: 32, userId: p.userId),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -898,7 +933,7 @@ class _MiniLeaderboard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(children: [
               SizedBox(width: 22, child: Text('${ranked.indexOf(p) + 1}', style: T.disp(16, color: c.muted))),
-              Avatar(initial: p.initial, index: p.avatar, size: 30, ring: p.userId == ctrl.me ? c.ink : null),
+              Avatar(initial: p.initial, index: p.avatar, size: 30, ring: p.userId == ctrl.me ? c.ink : null, userId: p.userId),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(p.userId == ctrl.me ? 'You' : p.nickname,
@@ -940,6 +975,17 @@ class _ResultsView extends ConsumerStatefulWidget {
 
 class _ResultsViewState extends ConsumerState<_ResultsView> {
   bool _starting = false;
+  final _cardKey = GlobalKey();
+
+  void _shareScore() {
+    final ctrl = widget.ctrl;
+    final ranked = ctrl.ranked;
+    final rank = ranked.indexWhere((p) => p.userId == ctrl.me);
+    final score = ctrl.mePlayer?.score ?? 0;
+    final place = rank == 0 ? 'won' : (rank > 0 ? 'came #${rank + 1} of ${ranked.length}' : 'played');
+    final text = 'I $place in Exam Duel with $score points! 🦉 Think you can beat me? Play free: $appLink';
+    shareCard(context, _cardKey, text);
+  }
 
   Future<void> _rematch() async {
     setState(() => _starting = true);
@@ -976,20 +1022,30 @@ class _ResultsViewState extends ConsumerState<_ResultsView> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
             children: [
-              Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('RESULTS', style: T.micro(color: c.muted)),
-                    const SizedBox(height: 6),
-                    Text(title, style: T.disp(40, color: c.ink)),
-                    const SizedBox(height: 10),
-                    Bubble(line),
+              // Captured as an image when sharing the score.
+              RepaintBoundary(
+                key: _cardKey,
+                child: Container(
+                  color: c.bg,
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('RESULTS · EXAM DUEL', style: T.micro(color: c.muted)),
+                          const SizedBox(height: 6),
+                          Text(title, style: T.disp(40, color: c.ink)),
+                          const SizedBox(height: 10),
+                          Bubble(line),
+                        ]),
+                      ),
+                      Eve(size: 120, iris: c.iris, mood: mood, outfit: store.outfit, motion: motion),
+                    ]),
+                    const SizedBox(height: 28),
+                    _Podium(ranked: ranked, me: ctrl.me, motion: motion),
                   ]),
                 ),
-                Eve(size: 120, iris: c.iris, mood: mood, outfit: store.outfit, motion: motion),
-              ]),
-              const SizedBox(height: 28),
-              _Podium(ranked: ranked, me: ctrl.me, motion: motion),
+              ),
               const SizedBox(height: 16),
               for (var i = 3; i < ranked.length; i++)
                 Container(
@@ -998,7 +1054,7 @@ class _ResultsViewState extends ConsumerState<_ResultsView> {
                   decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(20)),
                   child: Row(children: [
                     SizedBox(width: 26, child: Text('${i + 1}', style: T.disp(16, color: c.muted))),
-                    Avatar(initial: ranked[i].initial, index: ranked[i].avatar, size: 32),
+                    Avatar(initial: ranked[i].initial, index: ranked[i].avatar, size: 32, userId: ranked[i].userId),
                     const SizedBox(width: 10),
                     Expanded(child: Text(ranked[i].userId == ctrl.me ? 'You' : ranked[i].nickname, style: T.body(15, w: FontWeight.w600, color: c.ink))),
                     Text('${ranked[i].score}', style: T.disp(18, color: c.ink)),
@@ -1041,7 +1097,11 @@ class _ResultsViewState extends ConsumerState<_ResultsView> {
                 child: Text('Waiting for a rematch…', style: T.disp(17, color: c.muted)),
               ),
             const SizedBox(height: 10),
-            GhostButton(label: 'Leave room', icon: Icons.logout_rounded, onTap: widget.onLeave),
+            Row(children: [
+              Expanded(child: GhostButton(label: 'Share', icon: Icons.ios_share_rounded, onTap: _shareScore)),
+              const SizedBox(width: 10),
+              Expanded(child: GhostButton(label: 'Leave', icon: Icons.logout_rounded, onTap: widget.onLeave)),
+            ]),
           ]),
         ),
       ]),
@@ -1078,6 +1138,7 @@ class _Podium extends StatelessWidget {
                         index: ranked[slots[s]].avatar,
                         size: slots[s] == 0 ? 62 : 50,
                         ring: ranked[slots[s]].userId == me ? c.ink : null,
+                        userId: ranked[slots[s]].userId,
                       ),
                       const SizedBox(height: 6),
                       Text(

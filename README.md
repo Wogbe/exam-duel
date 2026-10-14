@@ -22,13 +22,22 @@ The sections below describe the party-trivia game and Supabase backend that are 
 
 - **Play with friends (online rooms):** the host creates a room and shares a 5-letter code (copy or WhatsApp). 2–12 friends join from their own phones. Everyone gets the same question at the same moment, with a live timer, "who has answered" avatars, emote reactions ("👏 Nice!", "😮 Whoa!"), a reveal with a mini leaderboard, a podium with confetti, and rematches.
 - **Fair scoring:** the server scores every answer with its own clock: 500 points for a correct answer, up to 500 more for speed, and +10% per streak step (max +50%). Players can't see the answer until the reveal.
+- **New questions every game:** the server remembers which questions each player has had. Each game picks questions nobody in the room has seen first, then the ones seen longest ago. The bank grows by itself: a scheduled job imports questions from the Open Trivia Database (CC BY-SA 4.0) every 10 minutes, up to 6,000.
 - **Ask Eve (AI questions):** the host types a topic (e.g. "Space exploration", "Premier League") and Eve writes fresh questions with Claude. The bank fills the rest.
-- **Question bank:** 99 starter questions in 7 categories: History, Science, Geography, Sports, Music & Movies, Tech, Random. They are general-knowledge and not tied to one country.
-- **Fact of the Day:** a flip card when you open the app, with "Knew it" / "Mind blown" reactions and WhatsApp sharing. Reading it keeps your streak.
+- **Question bank:** 229 starter questions in 8 categories: History, Science, Geography, Sports, Music & Movies, Tech, **Bible**, Random. They are general-knowledge and not tied to one country.
+- **Fact of the Day:** a flip card when you open the app. Each player gets their own random fact (96 bundled), with no repeats until they have read them all. "Knew it" / "Mind blown" get a cheer from Eve and +5 XP once a day. "Another fact" (dice button) shows a bonus fact, and the share button uses the phone's share sheet.
 - **Streaks:** a weekly strip, celebration screen, and streak freezes (earn one per 7 days, hold 2).
-- **Quick Fire (solo, offline):** 60 seconds, combos, personal best.
+- **Solo (offline, and online questions when connected):**
+  - **Quick Fire:** 60 seconds, combos, personal best.
+  - **Survival:** 3 lives, and the clock per question shrinks from 12 s to 6 s as you score.
+  - **50/50:** one free lifeline per game.
+  - Questions you've already seen are skipped until you've seen the whole pool.
+- **Profile photos:** add, change or remove a photo (gallery or camera) from Profile or onboarding. Friends see it in rooms, on the scoreboard and on the podium.
+- **Share your score:** online results and solo results have a Share button. It shares a picture of the results card with a line of text and the game link (or copies the text where there is no share sheet).
+- **Sound effects and haptics:** taps, right and wrong answers, countdown ticks, combos, wins, coins and badges. Each can be switched off in Profile.
+- **Badges:** 15 to unlock (first win, streaks, combos, Survival, Bible scholar, curious owl and more). Each pays 20 coins, and they sit on a shelf in Profile.
 - **Progress:** XP and levels, coins, and Eve's wardrobe (glasses, striped scarf, headphones, graduation cap, jersey, tie).
-- **Settings:** dark mode, Reduce motion, haptics, and Eve's eye colour (Honey, Aqua, Lavender).
+- **Settings:** dark mode, Reduce motion, sound effects, haptics, and Eve's eye colour (Honey, Aqua, Lavender).
 
 ## 1. Run it (offline mode, 5 minutes)
 
@@ -52,9 +61,10 @@ Without Supabase keys, the app runs offline: onboarding, Fact of the Day, streak
 1. Create a project at supabase.com.
 2. **Auth › Providers (or Sign In / Up) › Anonymous sign-ins:** turn it on. Players never need an account.
 3. **Create the database:** open the SQL editor, paste `supabase/migrations/20261009000000_init.sql`, and run it. With the Supabase CLI you can instead run `supabase init` (keep the existing files), `supabase link`, then `supabase db push`.
-4. **Load the questions:** run `node tool/build_seed.mjs` (it regenerates `supabase/seed.sql` from `assets/data/questions.json`), then paste `supabase/seed.sql` into the SQL editor and run it.
-5. **Check Realtime:** the migration adds `rooms` and `room_players` to the `supabase_realtime` publication. In the dashboard, Database › Publications should list both.
-6. Run the app with your project URL and anon key (Project Settings › API):
+4. **Upgrade the database (v0.2):** paste `supabase/migrations/20261014000000_variety_photos.sql` into the SQL editor and run it. It adds question variety, solo practice, the OpenTDB import and profile photos. If it reports that `http` or `pg_cron` isn't enabled, turn both on under **Database › Extensions** and run the file again.
+5. **Load the questions:** run `node tool/build_seed.mjs` (it regenerates `supabase/seed.sql` from `assets/data/questions.json`), then paste `supabase/seed.sql` into the SQL editor and run it. It only adds questions that aren't in the bank yet, so it is safe to run again whenever you add questions.
+6. **Check Realtime:** the migration adds `rooms` and `room_players` to the `supabase_realtime` publication. In the dashboard, Database › Publications should list both.
+7. Run the app with your project URL and anon key (Project Settings › API):
 
 ```bash
 flutter run \
@@ -175,7 +185,8 @@ lib/
   screens/                    splash, onboarding, fact, streak, home, host setup,
                               join, room (lobby/game/results), solo, profile,
                               snap, map, topic, duel, results (Snap → Map → Duel)
-assets/data/                  questions.json (99), facts.json (38)
+assets/data/                  questions.json (229), facts.json (96)
+assets/sounds/                12 short sound effects (generated, no licence needed)
 assets/icon/                  app icon: master, adaptive layers, monochrome
 .github/workflows/            android-apk.yml (cloud APK build)
 tool/build_android.sh         one-command APK build
@@ -194,7 +205,9 @@ test/                         streak/wardrobe, Snap states, map progress, room c
 ## Adding content
 
 - **Questions:** add lines to `assets/data/questions.json` in the form `{"c":"science","q":"…","a":"correct","w":["wrong1","wrong2","wrong3"]}`, then re-run `node tool/build_seed.mjs` and the seed SQL. Options are shuffled automatically.
-- **Facts:** add `{"c":"science","t":"…"}` to `assets/data/facts.json`. One fact per day, the same for everyone.
+- **Facts:** add `{"c":"science","t":"…"}` to `assets/data/facts.json`. Each player gets a random unread one per day.
+- **Badges:** edit `Achievement.all` in `lib/data/achievements.dart`.
+- **Sounds:** replace any file in `assets/sounds/` with another short WAV file of the same name.
 - **Emotes:** edit `_emotes` in `lib/screens/room_screen.dart`.
 
 ## Testing status
@@ -210,10 +223,10 @@ test/                         streak/wardrobe, Snap states, map progress, room c
 - The Flutter code now runs: `flutter analyze` reports 3 info-level notices and `flutter test` passes.
 - The preview has widget tests for Snap's error states, map progress (including a tile → solo practice → results → map flow), keyboard use of buttons, and timer contrast.
 - The room controller has unit tests against a fake repository (timers, reveal and advance, answers, rematch, removal).
-- `supabase/tests/` runs the migration on an in-memory Postgres (PGlite) and checks the game rules: joining and limits, host-only actions, hidden answers, scoring and streaks, early and timeout reveal, host hand-off and cleanup. Run `cd supabase/tests && npm install && npm test`.
+- `supabase/tests/` runs both migrations on an in-memory Postgres (PGlite) and checks the game rules: joining and limits, host-only actions, hidden answers, scoring and streaks, early and timeout reveal, host hand-off and cleanup. For v0.2 it also checks that rematches get unseen questions, practice questions (filters, exclusions, signed-out use), the OpenTDB import against a fake http extension (base64 decoding, category mapping, duplicates), and room photo permissions. Run `cd supabase/tests && npm install && npm test`.
 - CI runs `flutter analyze` and `flutter test` before each build, and the SQL tests in their own workflow.
 - Not tried yet: a real device, and the online rooms against a live Supabase project (PGlite is not a full Supabase, so Realtime and the edge function are untested).
 
 ## Ideas for next
 
-Sound effects, push invites, a deep link that opens the join screen with the code filled in, a Rive version of Eve, category leaderboards, and a daily challenge (same 10 questions for everyone).
+Push invites, a deep link that opens the join screen with the code filled in, a Rive version of Eve, category leaderboards, and a daily challenge (same 10 questions for everyone).

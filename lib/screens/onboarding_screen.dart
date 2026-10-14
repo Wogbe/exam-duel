@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/photo_picker.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -137,10 +138,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   index: i,
                   size: 56,
                   ring: i == _avatar ? c.ink : null,
+                  photo: i == _avatar ? store.photo : null,
                 ),
               ),
             ),
         ]),
+        const SizedBox(height: 14),
+        GhostButton(
+          label: store.hasPhoto ? 'Change photo' : 'Add a photo (optional)',
+          icon: Icons.add_a_photo_rounded,
+          onTap: () => editPhoto(context, store),
+        ),
         const SizedBox(height: 24),
         Text('EVE’S EYES', style: T.micro(color: c.muted)),
         const SizedBox(height: 12),

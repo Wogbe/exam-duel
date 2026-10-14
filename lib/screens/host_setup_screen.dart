@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models.dart';
+import '../services/fx.dart';
 import '../state/providers.dart';
 import '../state/room_controller.dart';
 import '../theme/app_theme.dart';
@@ -57,6 +58,7 @@ class _HostSetupScreenState extends ConsumerState<HostSetupScreen> {
         ctrl.dispose();
         return;
       }
+      Fx.play(Sfx.go);
       Navigator.of(context).pushReplacement(softRoute(RoomScreen(controller: ctrl)));
     } catch (e) {
       if (mounted) {

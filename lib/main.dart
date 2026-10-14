@@ -7,6 +7,7 @@ import 'app.dart';
 import 'config.dart';
 import 'data/local_bank.dart';
 import 'data/player_store.dart';
+import 'services/fx.dart';
 import 'state/library.dart';
 import 'state/progress.dart';
 import 'state/providers.dart';
@@ -22,6 +23,8 @@ Future<void> main() async {
   final store = await PlayerStore.load();
   await progress.load();
   await library.load();
+  Fx.init(sound: store.sound, haptics: store.haptics); // not awaited: audio setup must never delay the app
+  store.addListener(() => Fx.update(sound: store.sound, haptics: store.haptics));
 
   runApp(ProviderScope(
     overrides: [

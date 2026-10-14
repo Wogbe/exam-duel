@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/duel_result.dart';
 import '../data/sample_sets.dart';
 import '../data/study_set.dart';
+import '../services/fx.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/eve/eve.dart';
@@ -89,7 +90,10 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
     final left = (_seconds * (1 - _timer.value)).ceil();
     if (left == _cueSecond) return;
     _cueSecond = left;
-    if (left >= 1 && left <= 3 && !_revealed) tick(true);
+    if (left >= 1 && left <= 3 && !_revealed) {
+      tick(true);
+      Fx.play(Sfx.tick);
+    }
   }
 
   void _pick(int i) {
@@ -98,6 +102,7 @@ class _DuelScreenState extends State<DuelScreen> with SingleTickerProviderStateM
     final left = 1 - _timer.value;
     final right = i == _q.answer;
     tick(true, heavy: !right);
+    Fx.play(right ? Sfx.correct : Sfx.wrong);
     setState(() {
       _picked = i;
       _correct.add(right);

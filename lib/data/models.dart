@@ -14,6 +14,7 @@ class Category {
     Category('sports', 'Sports', 0),
     Category('entertainment', 'Music & Movies', 4),
     Category('tech', 'Tech', 7),
+    Category('bible', 'Bible', 3),
     Category('random', 'Random', 5),
   ];
 
@@ -30,7 +31,10 @@ class Question {
   final List<String> options;
   final String category;
   final int? answer;
-  const Question({required this.stem, required this.options, required this.category, this.answer});
+
+  /// Database id for questions fetched from the online bank (solo play).
+  final String? id;
+  const Question({required this.stem, required this.options, required this.category, this.answer, this.id});
 
   /// Builds a shuffled question from the bundled format:
   /// `{c, q, a, w: [3 wrong]}`.
@@ -42,6 +46,7 @@ class Question {
       options: opts,
       category: j['c'] as String,
       answer: opts.indexOf(correct),
+      id: j['id'] as String?,
     );
   }
 }
@@ -134,6 +139,7 @@ class Player {
   final bool lastCorrect;
   final int lastPoints;
   final bool isHost;
+  final bool hasPhoto;
   const Player({
     required this.userId,
     required this.nickname,
@@ -144,6 +150,7 @@ class Player {
     required this.lastCorrect,
     required this.lastPoints,
     required this.isHost,
+    this.hasPhoto = false,
   });
 
   factory Player.fromJson(Map<String, dynamic> j) => Player(
@@ -156,6 +163,7 @@ class Player {
         lastCorrect: j['last_correct'] as bool? ?? false,
         lastPoints: (j['last_points'] as num?)?.toInt() ?? 0,
         isHost: j['is_host'] as bool? ?? false,
+        hasPhoto: j['has_photo'] as bool? ?? false,
       );
 
   String get initial => nickname.isEmpty ? '?' : nickname.substring(0, 1).toUpperCase();

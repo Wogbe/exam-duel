@@ -43,9 +43,21 @@ class LocalBank {
     }
   }
 
-  /// Same fact for everyone on the same calendar day, cycling the list.
-  Fact factFor(DateTime day) {
-    final epochDay = DateTime.utc(day.year, day.month, day.day).millisecondsSinceEpoch ~/ 86400000;
-    return _facts[epochDay % _facts.length];
+  /// Questions this player has not seen yet (by [stemKey]), shuffled.
+  /// When fewer than [n] are left, the seen ones fill the rest.
+  List<Question> drawFresh(int n, Set<String> seen, String Function(String) stemKey, {List<String> categories = const []}) {
+    final pool = _questions.where((q) => categories.isEmpty || categories.contains(q['c'])).toList()..shuffle(_rng);
+    final fresh = pool.where((q) => !seen.contains(stemKey(q['q'] as String))).toList();
+    final old = pool.where((q) => seen.contains(stemKey(q['q'] as String)));
+    return [...fresh, ...old].take(n).map((j) => Question.fromBank(j, _rng)).toList();
   }
+
+  /// How many questions in these categories the player has not seen.
+  int freshCount(Set<String> seen, String Function(String) stemKey, {List<String> categories = const []}) => _questions
+      .where((q) => (categories.isEmpty || categories.contains(q['c'])) && !seen.contains(stemKey(q['q'] as String)))
+      .length;
+
+  int get factCount => _facts.length;
+
+  Fact factAt(int i) => _facts[i % _facts.length];
 }

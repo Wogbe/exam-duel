@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -126,6 +129,58 @@ class GameRepository {
       .stream(primaryKey: ['room_id', 'user_id'])
       .eq('room_id', roomId)
       .map((rows) => rows.map(Player.fromJson).toList());
+
+  /// Fresh questions from the online bank for solo play (thousands, growing
+  /// daily). Works without signing in. Returns an empty list when offline.
+  Future<List<Question>> practiceQuestions({
+    int count = 30,
+    List<String> categories = const [],
+    List<String> exclude = const [],
+  }) async {
+    if (!enabled) return const [];
+    try {
+      final res = await _db.rpc('practice_questions', params: {
+        'p_count': count,
+        'p_categories': categories,
+        'p_exclude': exclude,
+      });
+      if (res is! List) return const [];
+      final rng = Random();
+      return [
+        for (final e in res)
+          if (e is Map) Question.fromBank(Map<String, dynamic>.from(e), rng),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Shares the player's photo with everyone in the room. Best effort.
+  Future<void> setRoomPhoto(String roomId, String base64Photo) async {
+    if (!enabled) return;
+    try {
+      await _db.rpc('set_room_photo', params: {'p_room': roomId, 'p_photo': base64Photo});
+    } catch (_) {
+      // Photos are decoration; the game goes on without them.
+    }
+  }
+
+  /// Photos of the players in a room, by user id.
+  Future<Map<String, Uint8List>> fetchRoomPhotos(String roomId) async {
+    if (!enabled) return const {};
+    try {
+      final rows = await _db.from('room_player_photos').select('user_id, photo').eq('room_id', roomId);
+      final out = <String, Uint8List>{};
+      for (final r in rows) {
+        try {
+          out[r['user_id'] as String] = base64Decode(r['photo'] as String);
+        } catch (_) {}
+      }
+      return out;
+    } catch (_) {
+      return const {};
+    }
+  }
 
   /// Lightweight emote channel (not stored).
   RealtimeChannel emoteChannel(String roomId, void Function(String userId, String emote) onEmote) {

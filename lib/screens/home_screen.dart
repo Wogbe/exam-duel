@@ -88,7 +88,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onTap: () => _open(const ProfileScreen()),
                   semanticLabel: 'Your profile and settings',
                   child: Stack(clipBehavior: Clip.none, children: [
-                    Avatar(initial: store.nickname.isEmpty ? '?' : store.nickname[0].toUpperCase(), index: store.avatar, size: 46),
+                    Avatar(initial: store.nickname.isEmpty ? '?' : store.nickname[0].toUpperCase(), index: store.avatar, size: 46, photo: store.photo),
                     Positioned(
                       right: -4,
                       bottom: -2,
@@ -304,7 +304,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _quickFireTile(AppColors c, PlayerStore store, {double? height = 158, double titleSize = 22}) => _tile(c,
       bg: Pastel.sky,
-      tag: store.bestQuickFire > 0 ? 'Best ${store.bestQuickFire}' : 'Solo · 60 s',
+      tag: store.bestQuickFire > 0 ? 'Best ${store.bestQuickFire}' : 'Solo · Survival',
       title: height == null ? 'Quick Fire' : 'Quick\nFire',
       icon: Icons.bolt_rounded,
       height: height,
@@ -339,7 +339,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // -------------------------------------------------------------------------
 
   Widget _wide(AppColors c, PlayerStore store, bool motion, bool atRisk, String greet) {
-    final fact = ref.watch(localBankProvider).factFor(DateTime.now());
+    final bank = ref.watch(localBankProvider);
+    final fact = bank.factAt(store.dailyFactIndex(bank.factCount));
     return Scaffold(
       body: Listener(
         onPointerHover: _track,
@@ -436,7 +437,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Pressable(
               onTap: () => _open(const ProfileScreen()),
               semanticLabel: 'Your profile and settings',
-              child: Avatar(initial: store.nickname.isEmpty ? '?' : store.nickname[0].toUpperCase(), index: store.avatar, size: 44),
+              child: Avatar(initial: store.nickname.isEmpty ? '?' : store.nickname[0].toUpperCase(), index: store.avatar, size: 44, photo: store.photo),
             ),
           ]),
         ),

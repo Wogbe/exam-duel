@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/achievements.dart';
 import '../data/player_store.dart';
+import '../services/photo_picker.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/badges.dart';
 import '../widgets/common.dart';
 import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
@@ -59,6 +62,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       tick(store.haptics, heavy: true);
       setState(() => _preview = null);
       showToast(context, 'Eve loves her ${o.name.toLowerCase()}!');
+      await announceBadges(context, store);
     } else {
       showToast(context, 'You need ${o.price - store.coins} more coins. Play a round!');
     }
@@ -83,7 +87,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ]),
             const SizedBox(height: 16),
             Row(children: [
-              Avatar(initial: store.nickname.isEmpty ? '?' : store.nickname[0].toUpperCase(), index: store.avatar, size: 72),
+              Pressable(
+                onTap: () => editPhoto(context, store),
+                semanticLabel: store.hasPhoto ? 'Change profile photo' : 'Add a profile photo',
+                child: Stack(clipBehavior: Clip.none, children: [
+                  Avatar(
+                    initial: store.nickname.isEmpty ? '?' : store.nickname[0].toUpperCase(),
+                    index: store.avatar,
+                    size: 72,
+                    photo: store.photo,
+                  ),
+                  Positioned(
+                    right: -4,
+                    bottom: -4,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(color: c.primary, shape: BoxShape.circle, border: Border.all(color: c.bg, width: 2)),
+                      child: Icon(Icons.photo_camera_rounded, size: 14, color: c.onPrimary),
+                    ),
+                  ),
+                ]),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -127,6 +152,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const SizedBox(width: 10),
               _stat(c, '${store.freezes}', 'Streak freezes', Pastel.lav),
             ]),
+            const SizedBox(height: 10),
+            Row(children: [
+              _stat(c, '${store.bestSurvival}', 'Survival best', Pastel.coral),
+              const SizedBox(width: 10),
+              _stat(c, '${store.bestCombo}', 'Best combo', Pastel.aqua),
+              const SizedBox(width: 10),
+              _stat(c, '${store.factsRead}', 'Facts read', Pastel.peach),
+            ]),
+            const SizedBox(height: 28),
+            Row(children: [
+              Text('BADGES', style: T.micro(color: c.muted)),
+              const Spacer(),
+              Text('${store.badges.length} of ${Achievement.all.length} · tap one to see its goal', style: T.body(12, color: c.muted)),
+            ]),
+            const SizedBox(height: 12),
+            BadgeShelf(store: store),
             const SizedBox(height: 28),
             Text('EVE’S WARDROBE', style: T.micro(color: c.muted)),
             const SizedBox(height: 12),
@@ -162,6 +203,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Divider(color: c.line, height: 1),
                 _toggle(c, 'Reduce motion', store.reduceMotion, store.setReduceMotion),
                 Divider(color: c.line, height: 1),
+                _toggle(c, 'Sound effects', store.sound, store.setSound),
+                Divider(color: c.line, height: 1),
                 _toggle(c, 'Haptics', store.haptics, store.setHaptics),
                 Divider(color: c.line, height: 1),
                 Padding(
@@ -188,6 +231,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ]),
                 ),
               ]),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Extra questions come from the Open Trivia Database (opentdb.com), shared under CC BY-SA 4.0.',
+              style: T.body(12, color: c.muted),
             ),
           ],
         ),

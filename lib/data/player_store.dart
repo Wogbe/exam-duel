@@ -1,7 +1,11 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/app_theme.dart';
+import 'achievements.dart';
 
 /// An outfit Eve can wear. Bought with coins earned by playing.
 class Outfit {
@@ -42,10 +46,43 @@ class PlayerStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---- profile photo ----
+  // Stored as base64 so it works the same on phones and on the web.
+  Uint8List? _photoCache;
+  String? _photoCacheKey;
+
+  String? get photoBase64 => _p.getString('photo');
+  bool get hasPhoto => photoBase64 != null;
+
+  Uint8List? get photo {
+    final b64 = photoBase64;
+    if (b64 == null) return null;
+    if (_photoCacheKey != b64) {
+      try {
+        _photoCache = base64Decode(b64);
+      } catch (_) {
+        _photoCache = null;
+      }
+      _photoCacheKey = b64;
+    }
+    return _photoCache;
+  }
+
+  Future<void> setPhoto(Uint8List bytes) async {
+    await _p.setString('photo', base64Encode(bytes));
+    notifyListeners();
+  }
+
+  Future<void> clearPhoto() async {
+    await _p.remove('photo');
+    notifyListeners();
+  }
+
   // ---- settings ----
   bool get dark => _p.getBool('dark') ?? false;
   bool get reduceMotion => _p.getBool('reduceMotion') ?? false;
   bool get haptics => _p.getBool('haptics') ?? true;
+  bool get sound => _p.getBool('sound') ?? true;
   AccentChoice get accent => AccentChoice.byId(_p.getString('accent'));
 
   Future<void> setDark(bool v) async {
@@ -63,6 +100,11 @@ class PlayerStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setSound(bool v) async {
+    await _p.setBool('sound', v);
+    notifyListeners();
+  }
+
   Future<void> setAccent(AccentChoice a) async {
     await _p.setString('accent', a.id);
     notifyListeners();
@@ -76,6 +118,29 @@ class PlayerStore extends ChangeNotifier {
   int get gamesPlayed => _p.getInt('games') ?? 0;
   int get wins => _p.getInt('wins') ?? 0;
   int get bestQuickFire => _p.getInt('bestQuickFire') ?? 0;
+
+  int get bestSurvival => _p.getInt('bestSurvival') ?? 0;
+  int get bestCombo => _p.getInt('bestCombo') ?? 0;
+  int get totalCorrect => _p.getInt('totalCorrect') ?? 0;
+  int get bibleCorrect => _p.getInt('bibleCorrect') ?? 0;
+
+  /// Counts one correct answer (any mode) for badges and stats.
+  Future<void> countCorrect(String category) async {
+    await _p.setInt('totalCorrect', totalCorrect + 1);
+    if (category == 'bible') await _p.setInt('bibleCorrect', bibleCorrect + 1);
+  }
+
+  Future<void> recordCombo(int combo) async {
+    if (combo > bestCombo) await _p.setInt('bestCombo', combo);
+  }
+
+  /// Returns true if this is a new best.
+  Future<bool> recordSurvival(int correct) async {
+    if (correct <= bestSurvival) return false;
+    await _p.setInt('bestSurvival', correct);
+    notifyListeners();
+    return true;
+  }
 
   Future<void> addReward({int xp = 0, int coins = 0, bool game = false, bool win = false}) async {
     await _p.setInt('xp', this.xp + xp);
@@ -189,8 +254,107 @@ class PlayerStore extends ChangeNotifier {
 
   // ---- daily fact ----
   bool get factSeenToday => _p.getString('factDay') == dayKey(DateTime.now());
+  int get factsRead => _p.getInt('factsRead') ?? 0;
+
   Future<void> markFactSeen() async {
+    if (!factSeenToday) await _p.setInt('factsRead', factsRead + 1);
     await _p.setString('factDay', dayKey(DateTime.now()));
     notifyListeners();
+  }
+
+  List<int> get _seenFacts => (_p.getStringList('seenFacts') ?? const []).map(int.tryParse).whereType<int>().toList();
+
+  /// Today's fact for this player: a random one they have not seen yet,
+  /// fixed for the rest of the day. Everyone gets a different order.
+  /// Safe to call from build (it never notifies listeners).
+  int dailyFactIndex(int total, {DateTime? now}) {
+    if (total <= 0) return 0;
+    final today = dayKey(now ?? DateTime.now());
+    final stored = _p.getInt('factPickIdx');
+    if (_p.getString('factPickDay') == today && stored != null && stored < total) return stored;
+    final pick = _pickUnseenFact(total);
+    _p.setString('factPickDay', today);
+    _p.setInt('factPickIdx', pick);
+    return pick;
+  }
+
+  /// A bonus fact (not today's), for "Another fact".
+  Future<int> bonusFactIndex(int total) async {
+    final pick = _pickUnseenFact(total, avoid: _p.getInt('factPickIdx'));
+    await _p.setInt('factsRead', factsRead + 1);
+    notifyListeners();
+    return pick;
+  }
+
+  int _pickUnseenFact(int total, {int? avoid}) {
+    var seen = _seenFacts.where((i) => i < total).toSet();
+    var pool = [for (var i = 0; i < total; i++) if (!seen.contains(i) && i != avoid) i];
+    if (pool.isEmpty) {
+      // Read them all: start a new cycle.
+      seen = {};
+      pool = [for (var i = 0; i < total; i++) if (i != avoid) i];
+    }
+    final pick = pool.isEmpty ? 0 : pool[Random().nextInt(pool.length)];
+    _p.setStringList('seenFacts', [...seen.map((i) => '$i'), '$pick']);
+    return pick;
+  }
+
+  /// +5 XP for reacting to the daily fact, once a day. Returns true if given.
+  Future<bool> rewardFactReaction() async {
+    final today = dayKey(DateTime.now());
+    if (_p.getString('factRewardDay') == today) return false;
+    await _p.setString('factRewardDay', today);
+    await addReward(xp: 5);
+    return true;
+  }
+
+  // ---- questions already seen (so solo play keeps finding new ones) ----
+  static const _seenCap = 1500;
+  static const _remoteCap = 400;
+
+  /// Stable across runs and platforms (String.hashCode is not).
+  static String stemKey(String stem) {
+    var h = 0x811c9dc5;
+    for (final unit in stem.toLowerCase().codeUnits) {
+      h ^= unit;
+      h = (h * 0x01000193) & 0xffffffff;
+    }
+    return h.toRadixString(36);
+  }
+
+  Set<String> get seenQuestions => (_p.getStringList('seenQ') ?? const []).toSet();
+  List<String> get recentRemoteIds => _p.getStringList('seenRemote') ?? const [];
+
+  Future<void> markQuestionSeen(String stem, {String? remoteId}) async {
+    final list = _p.getStringList('seenQ') ?? <String>[];
+    final key = stemKey(stem);
+    if (!list.contains(key)) {
+      list.add(key);
+      if (list.length > _seenCap) list.removeRange(0, list.length - _seenCap);
+      await _p.setStringList('seenQ', list);
+    }
+    if (remoteId != null) {
+      final r = [...recentRemoteIds.where((x) => x != remoteId), remoteId];
+      if (r.length > _remoteCap) r.removeRange(0, r.length - _remoteCap);
+      await _p.setStringList('seenRemote', r);
+    }
+  }
+
+  /// Forgets seen questions (used when every local question was seen).
+  Future<void> resetSeenQuestions() => _p.remove('seenQ');
+
+  // ---- badges ----
+  Set<String> get badges => (_p.getStringList('badges') ?? const []).toSet();
+
+  /// Unlocks every badge whose goal is now met, pays 20 coins for each, and
+  /// returns the new ones so the UI can celebrate.
+  Future<List<Achievement>> checkBadges() async {
+    final have = badges;
+    final fresh = Achievement.all.where((a) => !have.contains(a.id) && a.done(this)).toList();
+    if (fresh.isEmpty) return const [];
+    await _p.setStringList('badges', [...have, ...fresh.map((a) => a.id)]);
+    await _p.setInt('coins', coins + 20 * fresh.length);
+    notifyListeners();
+    return fresh;
   }
 }
