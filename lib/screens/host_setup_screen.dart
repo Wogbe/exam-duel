@@ -44,6 +44,7 @@ class _HostSetupScreenState extends ConsumerState<HostSetupScreen> {
         store.avatar,
         RoomSettings(count: _count, seconds: _seconds, categories: _cats.toList()),
       );
+      await store.rememberRoom(room.code);
       final ctrl = RoomController(repo, room);
       if (topic.isNotEmpty) {
         setState(() => _busy = 'Eve is writing questions about “$topic”…');
@@ -73,6 +74,7 @@ class _HostSetupScreenState extends ConsumerState<HostSetupScreen> {
     final c = context.c;
     final store = ref.watch(playerStoreProvider);
     final online = ref.watch(gameRepoProvider).enabled;
+    final counts = ref.watch(localBankProvider).countsByCategory;
     final motion = !store.reduceMotion;
 
     if (_busy != null) {
@@ -121,7 +123,7 @@ class _HostSetupScreenState extends ConsumerState<HostSetupScreen> {
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
                   childAspectRatio: 2.3,
-                  children: [for (final cat in Category.all) _catTile(c, cat)],
+                  children: [for (final cat in Category.all) _catTile(c, cat, counts[cat.id] ?? 0)],
                 ),
                 const SizedBox(height: 22),
                 Text('QUESTIONS', style: T.micro(color: c.muted)),
@@ -187,7 +189,7 @@ class _HostSetupScreenState extends ConsumerState<HostSetupScreen> {
         ),
       );
 
-  Widget _catTile(AppColors c, Category cat) {
+  Widget _catTile(AppColors c, Category cat, int count) {
     final on = _cats.contains(cat.id);
     return Pressable(
       onTap: () {
@@ -204,7 +206,12 @@ class _HostSetupScreenState extends ConsumerState<HostSetupScreen> {
           border: Border.all(color: on ? c.ink : Colors.transparent, width: 2.5),
         ),
         child: Row(children: [
-          Expanded(child: Text(cat.name, style: T.body(14, w: FontWeight.w700, color: Pastel.ink, height: 1.15))),
+          Expanded(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(cat.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.body(14, w: FontWeight.w700, color: Pastel.ink, height: 1.15)),
+              if (count > 0) Text('$count questions', style: T.body(11, w: FontWeight.w600, color: Pastel.ink)),
+            ]),
+          ),
           AnimatedScale(
             scale: on ? 1 : 0,
             duration: const Duration(milliseconds: 300),

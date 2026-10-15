@@ -12,16 +12,31 @@ import '../widgets/eve/eve.dart';
 import 'room_screen.dart';
 
 class JoinScreen extends ConsumerStatefulWidget {
-  const JoinScreen({super.key});
+  const JoinScreen({super.key, this.initialCode});
+
+  /// Filled in when the screen was opened from a shared link.
+  final String? initialCode;
 
   @override
   ConsumerState<JoinScreen> createState() => _JoinScreenState();
 }
 
 class _JoinScreenState extends ConsumerState<JoinScreen> {
-  final _code = TextEditingController();
+  late final _code = TextEditingController(text: widget.initialCode ?? '');
   bool _busy = false;
   int _shake = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Arrived by link: join without making them tap anything. Offline, the
+    // code is simply filled in, so nobody sees an error they did not ask for.
+    if (widget.initialCode != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && ref.read(gameRepoProvider).enabled) _join();
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -36,6 +51,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
     try {
       await repo.ensureSignedIn();
       final room = await repo.joinRoom(_code.text, store.nickname, store.avatar);
+      await store.rememberRoom(room.code);
       if (!mounted) return;
       tick(store.haptics, heavy: true);
       Fx.play(Sfx.go);
@@ -56,6 +72,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
     final c = context.c;
     final store = ref.watch(playerStoreProvider);
     final ready = _code.text.trim().length == 5;
+    final last = store.lastRoomCode;
     return Scaffold(
       body: PageBody(maxWidth: 560,
         child: LayoutBuilder(
@@ -89,7 +106,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
               enabled: !store.reduceMotion && _shake > 0,
               child: TextField(
                 controller: _code,
-                autofocus: true,
+                autofocus: widget.initialCode == null,
                 maxLength: 5,
                 textAlign: TextAlign.center,
                 textCapitalization: TextCapitalization.characters,
@@ -111,6 +128,31 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                 ),
               ),
             ),
+            if (last != null && last != _code.text.trim()) ...[
+              const SizedBox(height: 14),
+              Center(
+                child: Pressable(
+                  onTap: () => setState(() {
+                    _code.text = last;
+                    _code.selection = TextSelection.collapsed(offset: last.length);
+                  }),
+                  semanticLabel: 'Use your last room code, $last',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: c.surface,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: c.line, width: 1.5),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.replay_rounded, size: 17, color: c.muted),
+                      const SizedBox(width: 7),
+                      Text('Last room: $last', style: T.body(14, w: FontWeight.w700, color: c.ink)),
+                    ]),
+                  ),
+                ),
+              ),
+            ],
             const Spacer(flex: 2),
             GoButton(label: 'Join room', busy: _busy, onTap: ready ? _join : null),
                 ]),

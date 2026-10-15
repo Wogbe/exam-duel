@@ -83,6 +83,9 @@ class PlayerStore extends ChangeNotifier {
   bool get reduceMotion => _p.getBool('reduceMotion') ?? false;
   bool get haptics => _p.getBool('haptics') ?? true;
   bool get sound => _p.getBool('sound') ?? true;
+
+  /// 0.0 to 1.0. Scales every sound effect.
+  double get volume => (_p.getDouble('volume') ?? 0.7).clamp(0.0, 1.0).toDouble();
   AccentChoice get accent => AccentChoice.byId(_p.getString('accent'));
 
   Future<void> setDark(bool v) async {
@@ -97,6 +100,11 @@ class PlayerStore extends ChangeNotifier {
 
   Future<void> setHaptics(bool v) async {
     await _p.setBool('haptics', v);
+    notifyListeners();
+  }
+
+  Future<void> setVolume(double v) async {
+    await _p.setDouble('volume', v.clamp(0.0, 1.0).toDouble());
     notifyListeners();
   }
 
@@ -156,6 +164,27 @@ class PlayerStore extends ChangeNotifier {
     await _p.setInt('bestQuickFire', correct);
     notifyListeners();
     return true;
+  }
+
+  /// The level the player has already celebrated. Returns the new level the
+  /// first time they pass a level boundary, and null every other time.
+  Future<int?> takeLevelUp() async {
+    final seen = _p.getInt('seenLevel');
+    if (seen == null) {
+      await _p.setInt('seenLevel', level); // existing players start level-up from here
+      return null;
+    }
+    if (level <= seen) return null;
+    await _p.setInt('seenLevel', level);
+    return level;
+  }
+
+  // ---- the last room you played in ----
+  String? get lastRoomCode => _p.getString('lastRoom');
+
+  Future<void> rememberRoom(String code) async {
+    await _p.setString('lastRoom', code.toUpperCase());
+    notifyListeners();
   }
 
   // ---- Eve's wardrobe ----

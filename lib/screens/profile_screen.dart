@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/achievements.dart';
 import '../data/player_store.dart';
+import '../services/fx.dart';
 import '../services/photo_picker.dart';
+import 'about_screen.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/badges.dart';
@@ -215,6 +217,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 _toggle(c, 'Reduce motion', store.reduceMotion, store.setReduceMotion),
                 Divider(color: c.line, height: 1),
                 _toggle(c, 'Sound effects', store.sound, store.setSound),
+                if (store.sound)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(children: [
+                      Icon(Icons.volume_down_rounded, size: 20, color: c.muted),
+                      Expanded(
+                        child: Slider(
+                          value: store.volume,
+                          onChanged: store.setVolume,
+                          onChangeEnd: (_) => Fx.play(Sfx.pop),
+                          activeColor: c.ink,
+                          inactiveColor: c.surface2,
+                          semanticFormatterCallback: (v) => 'Volume ${(v * 100).round()} percent',
+                        ),
+                      ),
+                      Icon(Icons.volume_up_rounded, size: 20, color: c.muted),
+                    ]),
+                  ),
                 Divider(color: c.line, height: 1),
                 _toggle(c, 'Haptics', store.haptics, store.setHaptics),
                 Divider(color: c.line, height: 1),
@@ -243,10 +263,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ]),
             ),
-            const SizedBox(height: 20),
-            Text(
-              'Extra questions come from the Open Trivia Database (opentdb.com), shared under CC BY-SA 4.0.',
-              style: T.body(12, color: c.muted),
+            const SizedBox(height: 12),
+            Pressable(
+              onTap: () => Navigator.of(context).push(softRoute(const AboutScreen())),
+              semanticLabel: 'About Exam Duel',
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(24)),
+                child: Row(children: [
+                  Icon(Icons.info_outline_rounded, size: 20, color: c.muted),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text('About, version and credits', style: T.body(16, w: FontWeight.w600, color: c.ink))),
+                  Icon(Icons.chevron_right_rounded, color: c.muted),
+                ]),
+              ),
             ),
           ],
         ),

@@ -22,6 +22,7 @@ The sections below describe the party-trivia game and Supabase backend that are 
 ## What's in the party game today
 
 - **Play with friends (online rooms):** the host creates a room and shares a 5-letter code (copy or WhatsApp). 2–12 friends join from their own phones. Everyone gets the same question at the same moment, with a live timer, "who has answered" avatars, emote reactions ("👏 Nice!", "😮 Whoa!"), a reveal with a mini leaderboard, a podium with confetti, and rematches.
+- **Join by link:** the host shares `https://wogbe.github.io/exam-duel/?code=ABCDE`. Tapping it opens the web app in the room, or offers to open the Android app. No typing a code.
 - **Everyone is told apart:** two friends called Kofi can both join. The server names the second one "Kofi 2" and gives them a colour nobody else in the room is using, so the first 8 players always look different. The renamed player is told once.
 - **Fair scoring:** the server scores every answer with its own clock: 500 points for a correct answer, up to 500 more for speed, and +10% per streak step (max +50%). Players can't see the answer until the reveal.
 - **New questions every game:** the server remembers which questions each player has had. Each game picks questions nobody in the room has seen first, then the ones seen longest ago. The bank grows by itself: a scheduled job imports questions from the Open Trivia Database (CC BY-SA 4.0) every 10 minutes, up to 6,000.
@@ -39,7 +40,8 @@ The sections below describe the party-trivia game and Supabase backend that are 
 - **Sound effects and haptics:** taps, right and wrong answers, countdown ticks, combos, wins, coins and badges. Each can be switched off in Profile.
 - **Badges:** 15 to unlock (first win, streaks, combos, Survival, Bible scholar, curious owl and more). Each pays 20 coins, and they sit on a shelf in Profile.
 - **Progress:** XP and levels, coins, and Eve's wardrobe (glasses, striped scarf, headphones, graduation cap, jersey, tie).
-- **Settings:** dark mode, Reduce motion, sound effects, haptics, and Eve's eye colour (Honey, Aqua, Lavender).
+- **Level ups, About and volume:** passing a level brings up a short celebration; Profile has a volume slider and an About page with the version and the Open Trivia DB credit.
+- **Settings:** dark mode, Reduce motion, sound effects, volume, haptics, and Eve's eye colour (Honey, Aqua, Lavender).
 
 ## 1. Run it (offline mode, 5 minutes)
 

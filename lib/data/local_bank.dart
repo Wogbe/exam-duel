@@ -24,6 +24,16 @@ class LocalBank {
 
   int get questionCount => _questions.length;
 
+  /// How many bundled questions each category holds, for the category pickers.
+  Map<String, int> get countsByCategory {
+    final out = <String, int>{};
+    for (final q in _questions) {
+      final c = q['c'] as String;
+      out[c] = (out[c] ?? 0) + 1;
+    }
+    return out;
+  }
+
   /// Random questions, optionally limited to some categories.
   /// Never repeats a question within one batch.
   List<Question> draw(int n, {List<String> categories = const []}) {

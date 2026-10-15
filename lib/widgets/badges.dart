@@ -5,16 +5,69 @@ import '../data/player_store.dart';
 import '../services/fx.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
+import 'eve/eve.dart';
 
-/// Unlocks any badges the player has just earned and celebrates them.
+/// Celebrates a new level, then unlocks and announces any new badges.
 /// Call after a game, a fact or a profile change.
 Future<void> announceBadges(BuildContext context, PlayerStore store) async {
+  final level = await store.takeLevelUp();
+  if (level != null && context.mounted) {
+    await _celebrateLevel(context, store, level);
+  }
+  if (!context.mounted) return;
   final fresh = await store.checkBadges();
   if (fresh.isEmpty || !context.mounted) return;
   Fx.play(Sfx.badge);
   Fx.buzz(heavy: true);
   final names = fresh.map((a) => a.name).join(', ');
   showToast(context, fresh.length == 1 ? 'Badge unlocked: $names · +20 coins' : 'Badges unlocked: $names · +${20 * fresh.length} coins');
+}
+
+/// A short, skippable "you reached level N" sheet.
+Future<void> _celebrateLevel(BuildContext context, PlayerStore store, int level) async {
+  final c = context.c;
+  Fx.play(Sfx.win);
+  Fx.buzz(heavy: true);
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: c.surface,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 10, 24, 16),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Center(
+            child: PopIn(
+              enabled: !store.reduceMotion,
+              child: Eve(
+                size: 150,
+                iris: c.iris,
+                mood: EveMood.cheering,
+                outfit: store.outfit,
+                motion: !store.reduceMotion,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Center(child: Text('LEVEL UP', style: T.micro(color: c.muted))),
+          const SizedBox(height: 6),
+          Center(child: Text('Level $level', style: T.disp(44, color: c.ink))),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              'Eve is impressed. ${500 - store.xp % 500} XP to level ${level + 1}.',
+              textAlign: TextAlign.center,
+              style: T.body(15, color: c.muted),
+            ),
+          ),
+          const SizedBox(height: 18),
+          ProgressBar(value: store.levelProgress, striped: true, height: 10),
+          const SizedBox(height: 18),
+          GoButton(label: 'Nice', icon: Icons.check_rounded, onTap: () => Navigator.pop(ctx)),
+        ]),
+      ),
+    ),
+  );
 }
 
 /// The Profile badge shelf: unlocked badges in colour, locked ones faded.

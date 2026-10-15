@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/deep_link.dart';
 import '../services/photo_picker.dart';
 import '../state/providers.dart';
 import '../theme/app_theme.dart';
@@ -8,6 +9,7 @@ import '../widgets/common.dart';
 import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
 import 'fact_screen.dart';
+import 'join_screen.dart';
 
 /// Two steps: meet Eve, then pick a name, avatar colour and accent.
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -32,7 +34,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final store = ref.read(playerStoreProvider);
     await store.setProfile(_name.text, _avatar);
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(softRoute(const FactScreen(firstOpen: true)));
+    final code = takeLinkCode();
+    Navigator.of(context).pushReplacement(
+      softRoute(code != null ? JoinScreen(initialCode: code) : const FactScreen(firstOpen: true)),
+    );
   }
 
   @override

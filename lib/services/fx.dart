@@ -18,10 +18,12 @@ class Fx {
   static bool _ready = false;
   static bool _sound = true;
   static bool _haptics = true;
+  static double _master = 0.7;
   static final Map<Sfx, AudioPlayer> _players = {};
 
   static bool get haptics => _haptics;
   static bool get sound => _sound;
+  static double get master => _master;
 
   static const _iosCategory = AVAudioSessionCategory.ambient;
   static const _androidFocus = AndroidAudioFocus.none;
@@ -43,9 +45,9 @@ class Fx {
 
   /// Turns effects on. Sounds mix with the user's music instead of pausing it,
   /// and respect the iPhone silent switch.
-  static Future<void> init({required bool sound, required bool haptics}) async {
+  static Future<void> init({required bool sound, required bool haptics, double volume = 0.7}) async {
     _ready = true;
-    update(sound: sound, haptics: haptics);
+    update(sound: sound, haptics: haptics, volume: volume);
     try {
       await AudioPlayer.global.setAudioContext(AudioContext(
         android: AudioContextAndroid(
@@ -60,14 +62,15 @@ class Fx {
     }
   }
 
-  static void update({required bool sound, required bool haptics}) {
+  static void update({required bool sound, required bool haptics, double? volume}) {
     _sound = sound;
     _haptics = haptics;
+    if (volume != null) _master = volume.clamp(0.0, 1.0).toDouble();
   }
 
   /// Plays a sound if sounds are on.
   static void play(Sfx s) {
-    if (!_ready || !_sound) return;
+    if (!_ready || !_sound || _master <= 0) return;
     unawaited(_play(s));
   }
 
@@ -82,7 +85,7 @@ class Fx {
         }
       }
       await p.stop();
-      await p.play(AssetSource('sounds/${s.name}.wav'), volume: _volume[s] ?? 0.7);
+      await p.play(AssetSource('sounds/${s.name}.wav'), volume: (_volume[s] ?? 0.7) * _master);
     } catch (_) {
       // Ignore: a sound is never worth an error.
     }

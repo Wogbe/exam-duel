@@ -7,6 +7,7 @@ import 'app.dart';
 import 'config.dart';
 import 'data/local_bank.dart';
 import 'data/player_store.dart';
+import 'services/deep_link.dart';
 import 'services/fx.dart';
 import 'state/library.dart';
 import 'state/progress.dart';
@@ -14,6 +15,7 @@ import 'state/providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  readLinkCode(); // a friend's "join my room" link, if that is how we were opened
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   if (AppConfig.onlineEnabled) {
@@ -23,8 +25,9 @@ Future<void> main() async {
   final store = await PlayerStore.load();
   await progress.load();
   await library.load();
-  Fx.init(sound: store.sound, haptics: store.haptics); // not awaited: audio setup must never delay the app
-  store.addListener(() => Fx.update(sound: store.sound, haptics: store.haptics));
+  // Not awaited: audio setup must never delay the app.
+  Fx.init(sound: store.sound, haptics: store.haptics, volume: store.volume);
+  store.addListener(() => Fx.update(sound: store.sound, haptics: store.haptics, volume: store.volume));
 
   runApp(ProviderScope(
     overrides: [
