@@ -20,7 +20,7 @@ void main() {
     await t.binding.setSurfaceSize(const Size(480, 1000));
     await t.pumpWidget(MaterialApp(theme: buildTheme(dark: false, accent: AccentChoice.aqua), home: const SnapScreen()));
     await t.pump(const Duration(seconds: 1));
-    expect(find.text('Paste notes'), findsOneWidget);
+    expect(find.text('Paste your notes'), findsOneWidget);
     expect(t.takeException(), isNull);
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 2)); // let the typewriter's last delay run out

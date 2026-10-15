@@ -11,6 +11,17 @@ import '../widgets/common.dart';
 import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
 
+/// Icon and pastel colour for each outfit, so the wardrobe reads at a glance.
+const _wardrobe = <String, (IconData, int)>{
+  'none': (Icons.do_not_disturb_on_outlined, 2),
+  'glasses': (Icons.visibility_rounded, 7),
+  'scarf': (Icons.waves_rounded, 4),
+  'headphones': (Icons.headphones_rounded, 1),
+  'cap': (Icons.school_rounded, 5),
+  'jersey': (Icons.sports_soccer_rounded, 0),
+  'tie': (Icons.work_rounded, 3),
+};
+
 /// Profile, stats, Eve's wardrobe and settings on one scrolling page.
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -184,12 +195,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 12),
             GridView.count(
-              crossAxisCount: isWide(context) ? 3 : 2,
+              crossAxisCount: isWide(context) ? 4 : 3,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 2.4,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.80,
               children: [for (final o in Outfit.all) _outfitTile(c, store, o)],
             ),
             const SizedBox(height: 28),
@@ -259,26 +270,70 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final owned = store.ownedOutfits.contains(o.id);
     final wearing = store.outfit == o.id;
     final previewing = _preview == o.id;
+    final look = _wardrobe[o.id] ?? (Icons.checkroom_rounded, 1);
+    final ring = wearing || previewing;
+    final fg = owned ? Pastel.ink : c.ink;
     return Pressable(
       onTap: () => _tapOutfit(store, o),
-      semanticLabel: '${o.name}, ${wearing ? 'wearing' : owned ? 'owned' : '${o.price} coins'}',
+      semanticLabel: '${o.name}, ${wearing ? 'wearing' : owned ? 'owned, tap to wear' : '${o.price} coins'}',
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        duration: const Duration(milliseconds: 220),
+        padding: const EdgeInsets.fromLTRB(8, 12, 8, 10),
         decoration: BoxDecoration(
-          color: c.surface,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: wearing || previewing ? c.ink : c.line, width: wearing || previewing ? 2.5 : 1.5),
+          color: owned ? Pastel.all[look.$2] : c.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: ring ? c.ink : (owned ? Colors.transparent : c.line),
+            width: ring ? 2.5 : 1.5,
+          ),
         ),
-        child: Row(children: [
-          Expanded(child: Text(o.name, style: T.body(14, w: FontWeight.w700, color: c.ink, height: 1.15))),
+        child: Column(children: [
+          Stack(clipBehavior: Clip.none, children: [
+            AnimatedScale(
+              scale: ring ? 1.08 : 1,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutBack,
+              child: Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: owned ? Colors.white.withValues(alpha: 0.7) : c.surface2,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(look.$1, size: 23, color: fg),
+              ),
+            ),
+            if (wearing)
+              Positioned(
+                right: -3,
+                bottom: -3,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(color: Pastel.ink, shape: BoxShape.circle, border: Border.all(color: Pastel.all[look.$2], width: 2)),
+                  child: const Icon(Icons.check_rounded, size: 11, color: Colors.white),
+                ),
+              ),
+          ]),
+          const SizedBox(height: 8),
+          Expanded(
+            child: Text(
+              o.name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: T.body(12, w: FontWeight.w700, color: fg, height: 1.15),
+            ),
+          ),
           if (wearing)
-            Icon(Icons.check_circle_rounded, color: c.ink, size: 20)
-          else if (!owned)
-            Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.toll_rounded, color: Pastel.coin, size: 16),
+            Text('Wearing', style: T.body(11, w: FontWeight.w700, color: fg))
+          else if (owned)
+            Text('Tap to wear', style: T.body(11, w: FontWeight.w600, color: fg))
+          else
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(Icons.toll_rounded, color: Pastel.coin, size: 13),
               const SizedBox(width: 3),
-              Text('${o.price}', style: T.disp(15, color: c.ink)),
+              Text('${o.price}', style: T.disp(13, color: c.ink)),
             ]),
         ]),
       ),

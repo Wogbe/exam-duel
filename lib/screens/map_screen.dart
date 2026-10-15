@@ -11,6 +11,8 @@ import '../widgets/mastery_tile.dart';
 import '../widgets/responsive.dart';
 import '../widgets/study_widgets.dart';
 import '../widgets/view_settings.dart';
+import 'host_setup_screen.dart';
+import 'profile_screen.dart';
 import 'snap_screen.dart';
 import 'topic_screen.dart';
 
@@ -178,11 +180,13 @@ class MapScreen extends StatelessWidget {
               child: FloatingNav(
                 index: 0,
                 onTap: (i) {
-                  if (i == 2) {
-                    Navigator.of(context).push(softRoute(const SnapScreen()));
-                  } else if (i != 0) {
-                    showToast(context, 'Coming soon');
-                  }
+                  if (i == 0) return; // already here
+                  tick(true);
+                  Navigator.of(context).push(softRoute(switch (i) {
+                    1 => const HostSetupScreen(), // duel your friends for real
+                    2 => const SnapScreen(),
+                    _ => const ProfileScreen(),
+                  }));
                 },
               ),
             ),

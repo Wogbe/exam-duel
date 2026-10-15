@@ -95,11 +95,6 @@ class _SnapScreenState extends State<SnapScreen> {
     if (t.isNotEmpty) _submit(t);
   }
 
-  void _stub() {
-    showToast(context, 'Preview: showing a sample map');
-    _start(setById('bio'));
-  }
-
   Future<void> _paste() async {
     String t;
     try {
@@ -165,38 +160,31 @@ class _SnapScreenState extends State<SnapScreen> {
         const SizedBox(height: 12),
         FadeRise(
           delay: const Duration(milliseconds: 220),
-          child: Row(children: [
-            // Photo and file stay sample stubs until the real build adds a camera/file picker.
-            for (final (icon, label, colour, VoidCallback onTap) in [
-              (Icons.photo_camera_rounded, 'Snap a photo', Pastel.lav, _stub),
-              (Icons.content_paste_rounded, 'Paste notes', Pastel.sky, _paste),
-              (Icons.description_rounded, 'Add a file', Pastel.peach, _stub),
-            ])
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(right: label == 'Add a file' ? 0 : 10),
-                  child: Pressable(
-                    onTap: onTap,
-                    semanticLabel: label,
-                    child: Container(
-                      height: 108,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: colour, borderRadius: BorderRadius.circular(22)),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.7), shape: BoxShape.circle),
-                          child: Icon(icon, size: 20, color: Pastel.ink),
-                        ),
-                        const Spacer(),
-                        Text(label, style: T.disp(15, color: Pastel.ink)),
-                      ]),
-                    ),
-                  ),
+          child: Pressable(
+            onTap: _paste,
+            semanticLabel: 'Paste notes from your clipboard',
+            child: Container(
+              height: 68,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(color: Pastel.sky, borderRadius: BorderRadius.circular(22)),
+              child: Row(children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.7), shape: BoxShape.circle),
+                  child: const Icon(Icons.content_paste_rounded, size: 20, color: Pastel.ink),
                 ),
-              ),
-          ]),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Paste your notes', style: T.disp(16, color: Pastel.ink)),
+                    Text('Copy them first, then tap here', style: T.body(12, w: FontWeight.w600, color: Pastel.ink)),
+                  ]),
+                ),
+                const Icon(Icons.arrow_forward_rounded, size: 20, color: Pastel.ink),
+              ]),
+            ),
+          ),
         ),
         const SizedBox(height: 22),
         FadeRise(
