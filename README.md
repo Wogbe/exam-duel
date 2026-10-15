@@ -26,7 +26,7 @@ The sections below describe the party-trivia game and Supabase backend that are 
 - **Fair scoring:** the server scores every answer with its own clock: 500 points for a correct answer, up to 500 more for speed, and +10% per streak step (max +50%). Players can't see the answer until the reveal.
 - **New questions every game:** the server remembers which questions each player has had. Each game picks questions nobody in the room has seen first, then the ones seen longest ago. The bank grows by itself: a scheduled job imports questions from the Open Trivia Database (CC BY-SA 4.0) every 10 minutes, up to 6,000.
 - **Ask Eve (AI questions):** the host types a topic (e.g. "Space exploration", "Premier League") and Eve writes fresh questions with Claude. The bank fills the rest.
-- **Question bank:** 331 starter questions in 8 categories: History, Science, Geography, Sports, Music & Movies, Tech, **Bible** (166 of them), Random. They are general-knowledge and not tied to one country.
+- **Question bank:** 693 starter questions in 8 categories: Bible (375), Random (174), History, Geography, Science, Sports, Music & Movies and Tech. They are general-knowledge and not tied to one country.
 - **Fact of the Day:** a flip card when you open the app. Each player gets their own random fact (96 bundled), with no repeats until they have read them all. "Knew it" / "Mind blown" get a cheer from Eve and +5 XP once a day. "Another fact" (dice button) shows a bonus fact, and the share button uses the phone's share sheet.
 - **Streaks:** a weekly strip, celebration screen, and streak freezes (earn one per 7 days, hold 2).
 - **Solo (offline, and online questions when connected):**
@@ -187,7 +187,7 @@ lib/
   screens/                    splash, onboarding, fact, streak, home, host setup,
                               join, room (lobby/game/results), solo, profile,
                               snap, map, topic, duel, results (Snap → Map → Duel)
-assets/data/                  questions.json (331), facts.json (96)
+assets/data/                  questions.json (693), facts.json (96)
 assets/sounds/                12 short sound effects (generated, no licence needed)
 assets/icon/                  app icon: master, adaptive layers, monochrome
 .github/workflows/            android-apk.yml (cloud APK build)

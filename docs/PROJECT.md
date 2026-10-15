@@ -53,6 +53,7 @@ Signature feature: Snap -> Map -> Duel.
 - 2026-10-14 Question variety: migration `20261014000000_variety_photos.sql` tracks seen questions per player (`user_seen_questions`) so games prefer unseen ones; solo pulls from the shared bank via `practice_questions`; `import_opentdb()` + pg_cron grow the bank from opentdb.com (CC BY-SA 4.0, credited in Profile). `seed.sql` now only adds missing questions (no delete), so it keeps seen history.
 - 2026-10-14 v0.2.1: `join_room` makes nicknames unique per room ("Kofi 2") and spreads avatar colours, both in `20261014120000_unique_names.sql`; helpers `_unique_nickname` / `_free_avatar` are revoked from clients. The renamed player gets one toast in the room. Bible grew to 166 questions (331 in all).
 - 2026-10-15 Nothing in the study flow pretends any more. Snap's photo and file tiles are gone (no OCR or AI behind them); paste is now one clear card. The map's FloatingNav opens real screens: Duels to HostSetupScreen, Me to ProfileScreen. Eve's wardrobe tiles are taller, with an icon and pastel per outfit (`_wardrobe` in profile_screen.dart) and a Wearing / Tap to wear / price line.
+- 2026-10-15 Bundled bank grew to 693 questions: Bible 375, Random 174. Wardrobe tiles got a dot pattern (`_DotPattern` in profile_screen.dart); "No outfit" now sits on mint and matches every other tile in size and layout.
 
 ## Release gates
 - [ ] Builds cleanly; analyze/lint passes (3 info issues open); tests pass
