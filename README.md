@@ -28,7 +28,7 @@ The sections below describe the party-trivia game and Supabase backend that are 
 - **New questions every game:** the server remembers which questions each player has had. Each game picks questions nobody in the room has seen first, then the ones seen longest ago. The bank grows by itself: a scheduled job imports questions from the Open Trivia Database (CC BY-SA 4.0) every 10 minutes, up to 6,000.
 - **Ask Eve (AI questions):** the host types a topic (e.g. "Space exploration", "Premier League") and Eve writes fresh questions with Claude. The bank fills the rest.
 - **Question bank:** 693 starter questions in 8 categories: Bible (375), Random (174), History, Geography, Science, Sports, Music & Movies and Tech. They are general-knowledge and not tied to one country.
-- **Fact of the Day:** a flip card when you open the app. Each player gets their own random fact (96 bundled), with no repeats until they have read them all. "Knew it" / "Mind blown" get a cheer from Eve and +5 XP once a day. "Another fact" (dice button) shows a bonus fact, and the share button uses the phone's share sheet.
+- **Fact of the Day:** a flip card when you open the app. Each player gets their own random fact (96 bundled), with no repeats until they have read them all. "Knew it" / "Mind blown" get a cheer from Eve and +5 XP once a day. "Another fact" (dice button) shows a bonus fact, and the share button shares the fact as a picture — the same card shape as a shared score.
 - **Streaks:** a weekly strip, celebration screen, and streak freezes (earn one per 7 days, hold 2).
 - **Solo (offline, and online questions when connected):**
   - **Quick Fire:** 60 seconds, combos, personal best.
@@ -39,7 +39,7 @@ The sections below describe the party-trivia game and Supabase backend that are 
 - **Share your score:** online results and solo results have a Share button. It shares a picture of the results card with a line of text and the game link (or copies the text where there is no share sheet).
 - **Sound effects and haptics:** taps, right and wrong answers, countdown ticks, combos, wins, coins and badges. Each can be switched off in Profile.
 - **Badges:** 15 to unlock (first win, streaks, combos, Survival, Bible scholar, curious owl and more). Each pays 20 coins, and they sit on a shelf in Profile.
-- **Progress:** XP and levels, coins, and Eve's wardrobe (glasses, striped scarf, headphones, graduation cap, jersey, tie).
+- **Progress:** XP and levels, coins, and Eve's wardrobe (glasses, striped scarf, headphones, graduation cap, jersey, tie). Every wardrobe card is the same size, in its own pastel colour with its own icon.
 - **Level ups, About and volume:** passing a level brings up a short celebration; Profile has a volume slider and an About page with the version and the Open Trivia DB credit.
 - **Settings:** dark mode, Reduce motion, sound effects, volume, haptics, and Eve's eye colour (Honey, Aqua, Lavender).
 
@@ -138,6 +138,8 @@ The web version is the same Flutter app with its own desktop layout, and phone a
 3. Open **Actions › Web app › Run workflow**. Every later push to `main` redeploys automatically.
 4. The site goes live at `https://<your-username>.github.io/<repo-name>/`.
 
+Shared links show a preview card: `tool/build_web.sh` copies `marketing/og.png` beside `index.html` and writes the Open Graph and Twitter tags. Override the address with `SITE_URL=https://example.com ./tool/build_web.sh` if you move the site.
+
 To build it locally, run `BASE_HREF=/ ./tool/build_web.sh` and upload `build/web/` to any static host (Netlify, Vercel, Firebase Hosting).
 
 ## How online play works
@@ -191,6 +193,7 @@ lib/
                               snap, map, topic, duel, results (Snap → Map → Duel)
 assets/data/                  questions.json (693), facts.json (96)
 assets/sounds/                12 short sound effects (generated, no licence needed)
+marketing/                    link-preview image, status and square posts, 3 promo frames
 assets/icon/                  app icon: master, adaptive layers, monochrome
 .github/workflows/            android-apk.yml (cloud APK build)
 tool/build_android.sh         one-command APK build

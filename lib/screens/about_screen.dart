@@ -15,7 +15,7 @@ class AboutScreen extends ConsumerWidget {
   const AboutScreen({super.key});
 
   /// Kept in step with `version:` in pubspec.yaml by hand.
-  static const version = '0.2.4';
+  static const version = '0.2.6';
 
   Future<void> _open(BuildContext context, String url) async {
     try {

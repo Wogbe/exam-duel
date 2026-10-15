@@ -11,6 +11,7 @@ import '../state/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/badges.dart';
 import '../widgets/common.dart';
+import '../widgets/fact_card.dart';
 import '../widgets/responsive.dart';
 import '../widgets/eve/eve.dart';
 import 'home_screen.dart';
@@ -28,6 +29,7 @@ class FactScreen extends ConsumerStatefulWidget {
 class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProviderStateMixin {
   late final AnimationController _flip = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
   final _rng = math.Random();
+  final _cardKey = GlobalKey();
   bool _flipped = false;
   String? _reaction;
   String? _cheer; // Eve's line after a reaction
@@ -103,8 +105,12 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
     Navigator.of(context).pushReplacement(softRoute(next));
   }
 
-  void _share(String text) =>
-      shareText(context, 'Did you know? $text\n\n— Fact of the Day from Eve the owl, Exam Duel. Get yours: $appLink');
+  /// Shares the fact as a picture, like a score card. Falls back to text.
+  void _share(String text) => shareCard(
+        context,
+        _cardKey,
+        'Did you know? $text\n\n— a fact a day from Eve the owl. Play free: $appLink',
+      );
 
   Future<void> _react(String id) async {
     final store = ref.read(playerStoreProvider);
@@ -157,7 +163,24 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
                 : EveMood.surprised;
 
     return Scaffold(
-      body: PageBody(maxWidth: 680,
+      body: Stack(children: [
+        // Laid out off-screen so the shared picture is always the same 4:5 card.
+        Positioned(
+          left: -(ShareFactCard.width + 200),
+          top: 0,
+          child: RepaintBoundary(
+            key: _cardKey,
+            child: ShareFactCard(
+              fact: fact.text,
+              category: fact.category,
+              label: _bonus ? 'BONUS FACT' : 'FACT OF THE DAY',
+              outfit: store.outfit,
+              iris: c.iris,
+              accent: c.acc,
+            ),
+          ),
+        ),
+        PageBody(maxWidth: 680,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -225,7 +248,7 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
                   ]),
                   const SizedBox(height: 12),
                   Row(children: [
-                    CircleIconButton(icon: Icons.share_rounded, label: 'Share this fact', onTap: () => _share(fact.text)),
+                    CircleIconButton(icon: Icons.share_rounded, label: 'Share this fact as a picture', onTap: () => _share(fact.text)),
                     const SizedBox(width: 10),
                     CircleIconButton(icon: Icons.casino_rounded, label: 'Another fact', onTap: _another),
                     const SizedBox(width: 10),
@@ -236,7 +259,8 @@ class _FactScreenState extends ConsumerState<FactScreen> with SingleTickerProvid
             ),
           ]),
         ),
-      ),
+        ),
+      ]),
     );
   }
 
